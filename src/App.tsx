@@ -1,48 +1,181 @@
 import { useState } from 'react';
-import type { Todo } from './types/todo';
-import { TodoInput } from './components/TodoInput';
-import { TodoList } from './components/TodoList';
-import './App.css';
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragStartEvent,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { AppProvider, useAppStore } from '@/store/useAppStore';
+import { Sidebar } from '@/components/Sidebar';
+import { BoardHeader } from '@/components/BoardHeader';
+import { Board } from '@/components/Board';
+import { TodoCard } from '@/components/TodoCard';
+import { NewWorkspaceDialog } from '@/components/dialogs/NewWorkspaceDialog';
+import { NewGroupDialog } from '@/components/dialogs/NewGroupDialog';
+import { CheckSquare, Loader2 } from 'lucide-react';
+import type { Todo } from '@/types/index';
 
-function App() {
-  const [todos, setTodos] = useState<Todo[]>([]);
+function AppInner() {
+  const { state, dispatch, isLoaded } = useAppStore();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [newWorkspaceOpen, setNewWorkspaceOpen] = useState(false);
+  const [newGroupOpen, setNewGroupOpen] = useState(false);
+  const [activeDragTodo, setActiveDragTodo] = useState<Todo | null>(null);
 
-  const addTodo = (text: string) => {
-    const newTodo: Todo = {
-      id: crypto.randomUUID(),
-      text,
-      completed: false,
-      createdAt: Date.now(),
-    };
-    setTodos((prev) => [newTodo, ...prev]);
-  };
+  const activeWorkspace = state.workspaces.find(w => w.id === state.activeWorkspaceId) ?? null;
 
-  const toggleTodo = (id: string) => {
-    setTodos((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t))
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  function handleDragStart(event: DragStartEvent) {
+    if (!activeWorkspace) return;
+    const todoId = event.active.id as string;
+    for (const group of activeWorkspace.groups) {
+      const todo = group.todos.find(t => t.id === todoId);
+      if (todo) { setActiveDragTodo(todo); return; }
+    }
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    setActiveDragTodo(null);
+    const { active, over } = event;
+    if (!over || !activeWorkspace) return;
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+    if (activeId === overId) return;
+
+    const sourceGroup = activeWorkspace.groups.find(g => g.todos.some(t => t.id === activeId));
+    if (!sourceGroup) return;
+
+    const targetGroup =
+      activeWorkspace.groups.find(g => g.id === overId) ??
+      activeWorkspace.groups.find(g => g.todos.some(t => t.id === overId));
+    if (!targetGroup) return;
+
+    if (sourceGroup.id === targetGroup.id) {
+      const oldIndex = sourceGroup.todos.findIndex(t => t.id === activeId);
+      const newIndex = sourceGroup.todos.findIndex(t => t.id === overId);
+      if (oldIndex !== newIndex) {
+        dispatch({
+          type: 'REORDER_TODO',
+          payload: { workspaceId: activeWorkspace.id, groupId: sourceGroup.id, activeIndex: oldIndex, overIndex: newIndex },
+        });
+      }
+    } else {
+      const overIndex = targetGroup.todos.findIndex(t => t.id === overId);
+      dispatch({
+        type: 'MOVE_TODO',
+        payload: {
+          workspaceId: activeWorkspace.id,
+          todoId: activeId,
+          fromGroupId: sourceGroup.id,
+          toGroupId: targetGroup.id,
+          overIndex: overIndex >= 0 ? overIndex : undefined,
+        },
+      });
+    }
+  }
+
+  if (!isLoaded) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <Loader2 size={24} className="animate-spin text-muted-foreground" />
+      </div>
     );
-  };
-
-  const deleteTodo = (id: string) => {
-    setTodos((prev) => prev.filter((t) => t.id !== id));
-  };
-
-  const remaining = todos.filter((t) => !t.completed).length;
+  }
 
   return (
-    <div className="app">
-      <header className="app-header">
-        <h1>Todo App</h1>
-        {todos.length > 0 && (
-          <p className="todo-count">{remaining} of {todos.length} remaining</p>
+    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+      <div className="flex h-screen overflow-hidden bg-background">
+        <Sidebar
+          workspaces={state.workspaces}
+          activeWorkspaceId={state.activeWorkspaceId}
+          onSelectWorkspace={id => dispatch({ type: 'SET_ACTIVE_WORKSPACE', payload: { id } })}
+          onDeleteWorkspace={id => dispatch({ type: 'DELETE_WORKSPACE', payload: { id } })}
+          onNewWorkspace={() => setNewWorkspaceOpen(true)}
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+        />
+
+        <div className="flex flex-col flex-1 overflow-hidden">
+          {activeWorkspace ? (
+            <>
+              <BoardHeader
+                workspaceName={activeWorkspace.name}
+                onNewGroup={() => setNewGroupOpen(true)}
+                onToggleSidebar={() => setSidebarOpen(true)}
+              />
+              <Board
+                workspace={activeWorkspace}
+                onAddTodo={(groupId, text) => dispatch({ type: 'ADD_TODO', payload: { workspaceId: activeWorkspace.id, groupId, text } })}
+                onToggleTodo={(groupId, todoId) => dispatch({ type: 'TOGGLE_TODO', payload: { workspaceId: activeWorkspace.id, groupId, todoId } })}
+                onDeleteTodo={(groupId, todoId) => dispatch({ type: 'DELETE_TODO', payload: { workspaceId: activeWorkspace.id, groupId, todoId } })}
+                onDeleteGroup={groupId => dispatch({ type: 'DELETE_GROUP', payload: { workspaceId: activeWorkspace.id, groupId } })}
+              />
+            </>
+          ) : (
+            <div className="flex flex-col flex-1 items-center justify-center gap-4 text-center px-6">
+              <div className="rounded-full bg-muted p-5">
+                <CheckSquare size={40} className="text-muted-foreground" />
+              </div>
+              <div>
+                <h2 className="font-semibold text-lg">Welcome to Workspaces</h2>
+                <p className="text-sm text-muted-foreground mt-1">Create a workspace to get started</p>
+              </div>
+              <button
+                onClick={() => setNewWorkspaceOpen(true)}
+                className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+              >
+                Create your first workspace →
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <DragOverlay>
+        {activeDragTodo && (
+          <TodoCard
+            todo={activeDragTodo}
+            onToggle={() => {}}
+            onDelete={() => {}}
+            isDragOverlay
+          />
         )}
-      </header>
-      <main className="app-main">
-        <TodoInput onAdd={addTodo} />
-        <TodoList todos={todos} onToggle={toggleTodo} onDelete={deleteTodo} />
-      </main>
-    </div>
+      </DragOverlay>
+
+      <NewWorkspaceDialog
+        open={newWorkspaceOpen}
+        onOpenChange={setNewWorkspaceOpen}
+        onConfirm={name => dispatch({ type: 'ADD_WORKSPACE', payload: { name } })}
+      />
+      <NewGroupDialog
+        open={newGroupOpen}
+        onOpenChange={setNewGroupOpen}
+        onConfirm={name => {
+          if (!activeWorkspace) return;
+          dispatch({ type: 'ADD_GROUP', payload: { workspaceId: activeWorkspace.id, name } });
+        }}
+      />
+    </DndContext>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <TooltipProvider>
+      <AppProvider>
+        <AppInner />
+      </AppProvider>
+    </TooltipProvider>
+  );
+}
