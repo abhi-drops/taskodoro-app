@@ -107,9 +107,12 @@ interface WorkspaceItemProps {
 }
 
 function WorkspaceItem({ workspace, isActive, onSelect, onDelete }: WorkspaceItemProps) {
-  const totalTodos = workspace.groups.reduce((sum, g) => sum + g.todos.length, 0);
-  const completedTodos = workspace.groups.reduce(
-    (sum, g) => sum + g.todos.filter(t => t.completed).length, 0
+  const { totalTodos, completedTodos } = workspace.groups.reduce(
+    (acc, g) => ({
+      totalTodos: acc.totalTodos + g.todos.length,
+      completedTodos: acc.completedTodos + g.todos.filter(t => t.completed).length,
+    }),
+    { totalTodos: 0, completedTodos: 0 },
   );
 
   return (
@@ -132,10 +135,10 @@ function WorkspaceItem({ workspace, isActive, onSelect, onDelete }: WorkspaceIte
       </div>
       <button
         onClick={e => { e.stopPropagation(); onDelete(); }}
-        className="opacity-0 group-hover:opacity-100 text-muted-foreground/50 hover:text-destructive transition-opacity"
+        className="flex items-center justify-center w-8 h-8 rounded text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
         aria-label={`Delete workspace ${workspace.name}`}
       >
-        <Trash2 size={13} />
+        <Trash2 size={15} />
       </button>
     </div>
   );

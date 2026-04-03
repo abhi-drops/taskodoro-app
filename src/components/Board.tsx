@@ -35,7 +35,6 @@ export function Board({ workspace, onAddTodo, onToggleTodo, onDeleteTodo, onDele
           <GroupColumn
             key={group.id}
             group={group}
-            workspaceId={workspace.id}
             onAddTodo={text => onAddTodo(group.id, text)}
             onToggleTodo={todoId => onToggleTodo(group.id, todoId)}
             onDeleteTodo={todoId => onDeleteTodo(group.id, todoId)}

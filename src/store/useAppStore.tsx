@@ -1,4 +1,4 @@
-import { createContext, useContext, useReducer, useEffect, useState } from 'react';
+import { createContext, useContext, useReducer, useEffect, useState, useRef } from 'react';
 import type { ReactNode } from 'react';
 import { Preferences } from '@capacitor/preferences';
 import { arrayMove } from '@dnd-kit/sortable';
@@ -176,6 +176,7 @@ const AppContext = createContext<AppContextValue | null>(null);
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [isLoaded, setIsLoaded] = useState(false);
+  const saveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   useEffect(() => {
     Preferences.get({ key: STORAGE_KEY }).then(({ value }) => {
@@ -192,7 +193,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!isLoaded) return;
-    Preferences.set({ key: STORAGE_KEY, value: JSON.stringify(state) });
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      Preferences.set({ key: STORAGE_KEY, value: JSON.stringify(state) });
+    }, 800);
+    return () => clearTimeout(saveTimer.current);
   }, [state, isLoaded]);
 
   return (

@@ -14,7 +14,7 @@ export function BoardHeader({ workspaceName, onNewGroup, onToggleSidebar }: Prop
       <Button
         variant="ghost"
         size="icon"
-        className="md:hidden h-8 w-8"
+        className="md:hidden h-11 w-11"
         onClick={onToggleSidebar}
         aria-label="Toggle sidebar"
       >

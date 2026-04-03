@@ -4,8 +4,6 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { Trash2, LayoutList } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { TodoCard } from '@/components/TodoCard';
@@ -13,14 +11,13 @@ import type { Group } from '@/types/index';
 
 interface Props {
   group: Group;
-  workspaceId: string;
   onAddTodo: (text: string) => void;
   onToggleTodo: (todoId: string) => void;
   onDeleteTodo: (todoId: string) => void;
   onDeleteGroup: () => void;
 }
 
-export function GroupColumn({ group, workspaceId: _workspaceId, onAddTodo, onToggleTodo, onDeleteTodo, onDeleteGroup }: Props) {
+export function GroupColumn({ group, onAddTodo, onToggleTodo, onDeleteTodo, onDeleteGroup }: Props) {
   const [inputValue, setInputValue] = useState('');
 
   const { setNodeRef, isOver } = useDroppable({ id: group.id });
@@ -36,32 +33,27 @@ export function GroupColumn({ group, workspaceId: _workspaceId, onAddTodo, onTog
   }
 
   return (
-    <div className="flex flex-col w-72 shrink-0 rounded-xl border border-border bg-muted/40 shadow-sm">
+    // Mobile: nearly full width so user sees a peek of next column
+    // Desktop: fixed 288px
+    <div className="flex flex-col w-[82vw] sm:w-72 shrink-0 rounded-xl border border-border bg-muted/40 shadow-sm h-[calc(100dvh-7rem)]">
       {/* Column header */}
-      <div className="flex items-center gap-2 px-3 pt-3 pb-2">
-        <LayoutList size={14} className="text-muted-foreground shrink-0" />
+      <div className="flex items-center gap-2 px-3 pt-3 pb-2 shrink-0">
+        <LayoutList size={16} className="text-muted-foreground shrink-0" />
         <span className="flex-1 font-semibold text-sm truncate">{group.name}</span>
-        <Badge variant="secondary" className="text-[10px] font-mono h-5 px-1.5">
+        <Badge variant="secondary" className="text-xs font-mono h-5 px-1.5">
           {completedCount}/{group.todos.length}
         </Badge>
-        <Tooltip>
-          <TooltipTrigger render={
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 text-muted-foreground hover:text-destructive"
-              onClick={onDeleteGroup}
-              aria-label="Delete group"
-            />
-          }>
-            <Trash2 size={13} />
-          </TooltipTrigger>
-          <TooltipContent>Delete group</TooltipContent>
-        </Tooltip>
+        <button
+          onClick={onDeleteGroup}
+          className="flex items-center justify-center w-8 h-8 rounded text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors"
+          aria-label="Delete group"
+        >
+          <Trash2 size={15} />
+        </button>
       </div>
 
       {/* Todo list droppable area */}
-      <ScrollArea className="flex-1 px-2" style={{ maxHeight: 'calc(100vh - 220px)' }}>
+      <ScrollArea className="flex-1 min-h-0 px-2">
         <SortableContext
           items={group.todos.map(t => t.id)}
           strategy={verticalListSortingStrategy}
@@ -90,14 +82,14 @@ export function GroupColumn({ group, workspaceId: _workspaceId, onAddTodo, onTog
         </SortableContext>
       </ScrollArea>
 
-      {/* Add todo input */}
-      <div className="px-2 pb-2 pt-1">
+      {/* Add todo input — full height on mobile */}
+      <div className="px-2 pb-3 pt-1 shrink-0">
         <form onSubmit={handleAddSubmit}>
           <Input
             value={inputValue}
             onChange={e => setInputValue(e.target.value)}
             placeholder="Add a todo…"
-            className="h-8 text-xs bg-background"
+            className="h-10 text-sm bg-background"
           />
         </form>
       </div>

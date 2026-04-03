@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -16,8 +16,7 @@ import { Sidebar } from '@/components/Sidebar';
 import { BoardHeader } from '@/components/BoardHeader';
 import { Board } from '@/components/Board';
 import { TodoCard } from '@/components/TodoCard';
-import { NewWorkspaceDialog } from '@/components/dialogs/NewWorkspaceDialog';
-import { NewGroupDialog } from '@/components/dialogs/NewGroupDialog';
+import { CreateNameDialog } from '@/components/dialogs/CreateNameDialog';
 import { CheckSquare, Loader2 } from 'lucide-react';
 import type { Todo } from '@/types/index';
 
@@ -85,6 +84,24 @@ function AppInner() {
     }
   }
 
+  const workspaceId = activeWorkspace?.id ?? '';
+
+  const handleAddTodo = useCallback((groupId: string, text: string) => {
+    dispatch({ type: 'ADD_TODO', payload: { workspaceId, groupId, text } });
+  }, [dispatch, workspaceId]);
+
+  const handleToggleTodo = useCallback((groupId: string, todoId: string) => {
+    dispatch({ type: 'TOGGLE_TODO', payload: { workspaceId, groupId, todoId } });
+  }, [dispatch, workspaceId]);
+
+  const handleDeleteTodo = useCallback((groupId: string, todoId: string) => {
+    dispatch({ type: 'DELETE_TODO', payload: { workspaceId, groupId, todoId } });
+  }, [dispatch, workspaceId]);
+
+  const handleDeleteGroup = useCallback((groupId: string) => {
+    dispatch({ type: 'DELETE_GROUP', payload: { workspaceId, groupId } });
+  }, [dispatch, workspaceId]);
+
   if (!isLoaded) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
@@ -116,10 +133,10 @@ function AppInner() {
               />
               <Board
                 workspace={activeWorkspace}
-                onAddTodo={(groupId, text) => dispatch({ type: 'ADD_TODO', payload: { workspaceId: activeWorkspace.id, groupId, text } })}
-                onToggleTodo={(groupId, todoId) => dispatch({ type: 'TOGGLE_TODO', payload: { workspaceId: activeWorkspace.id, groupId, todoId } })}
-                onDeleteTodo={(groupId, todoId) => dispatch({ type: 'DELETE_TODO', payload: { workspaceId: activeWorkspace.id, groupId, todoId } })}
-                onDeleteGroup={groupId => dispatch({ type: 'DELETE_GROUP', payload: { workspaceId: activeWorkspace.id, groupId } })}
+                onAddTodo={handleAddTodo}
+                onToggleTodo={handleToggleTodo}
+                onDeleteTodo={handleDeleteTodo}
+                onDeleteGroup={handleDeleteGroup}
               />
             </>
           ) : (
@@ -153,18 +170,22 @@ function AppInner() {
         )}
       </DragOverlay>
 
-      <NewWorkspaceDialog
+      <CreateNameDialog
         open={newWorkspaceOpen}
         onOpenChange={setNewWorkspaceOpen}
         onConfirm={name => dispatch({ type: 'ADD_WORKSPACE', payload: { name } })}
+        title="New Workspace"
+        placeholder="Workspace name…"
       />
-      <NewGroupDialog
+      <CreateNameDialog
         open={newGroupOpen}
         onOpenChange={setNewGroupOpen}
         onConfirm={name => {
           if (!activeWorkspace) return;
           dispatch({ type: 'ADD_GROUP', payload: { workspaceId: activeWorkspace.id, name } });
         }}
+        title="New Group"
+        placeholder="Group name…"
       />
     </DndContext>
   );

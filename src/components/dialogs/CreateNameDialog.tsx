@@ -7,9 +7,11 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onConfirm: (name: string) => void;
+  title: string;
+  placeholder: string;
 }
 
-export function NewWorkspaceDialog({ open, onOpenChange, onConfirm }: Props) {
+export function CreateNameDialog({ open, onOpenChange, onConfirm, title, placeholder }: Props) {
   const [name, setName] = useState('');
 
   function handleSubmit(e: React.FormEvent) {
@@ -30,11 +32,11 @@ export function NewWorkspaceDialog({ open, onOpenChange, onConfirm }: Props) {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>New Workspace</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
-            placeholder="Workspace name…"
+            placeholder={placeholder}
             value={name}
             onChange={e => setName(e.target.value)}
             autoFocus
