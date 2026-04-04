@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Clock, Tag, MessageSquare, AlignLeft, Flag, Palette, ArrowRightLeft, Trash2, Send } from 'lucide-react';
+import { X, Clock, Tag, MessageSquare, AlignLeft, Flag, Palette, ArrowRightLeft, Trash2, Send, CheckCircle2, Circle, Plus, ListTodo, Pencil } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useCountdown } from '@/hooks/useCountdown';
+import { MarkdownEditor } from '@/components/MarkdownEditor';
 import type { Todo, Group, TaskPriority } from '@/types/index';
 import type { AppAction } from '@/store/useAppStore';
 
@@ -85,17 +86,11 @@ export function TaskDetailsSheet({
 }: Props) {
   const [tagInput, setTagInput] = useState('');
   const [commentText, setCommentText] = useState('');
-  const descRef = useRef<HTMLTextAreaElement>(null);
+  const [subtaskInput, setSubtaskInput] = useState('');
+  const [showMarkdownEditor, setShowMarkdownEditor] = useState(false);
   const titleRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-resize textareas
-  useEffect(() => {
-    if (descRef.current) {
-      descRef.current.style.height = 'auto';
-      descRef.current.style.height = `${descRef.current.scrollHeight}px`;
-    }
-  }, [todo.description]);
-
+  // Auto-resize title textarea
   useEffect(() => {
     if (titleRef.current) {
       titleRef.current.style.height = 'auto';
@@ -110,8 +105,12 @@ export function TaskDetailsSheet({
     return () => document.removeEventListener('keydown', handler);
   }, [onClose]);
 
-  function patch(p: Partial<Pick<Todo, 'description' | 'priority' | 'color' | 'tags' | 'endTime' | 'text'>>) {
+  function patch(p: Partial<Pick<Todo, 'description' | 'priority' | 'color' | 'tags' | 'endTime' | 'text' | 'subtasks'>>) {
     dispatch({ type: 'UPDATE_TODO_DETAILS', payload: { workspaceId, groupId: currentGroupId, todoId: todo.id, patch: p } });
+  }
+
+  function handleToggleComplete() {
+    dispatch({ type: 'TOGGLE_TODO', payload: { workspaceId, groupId: currentGroupId, todoId: todo.id } });
   }
 
   function addTag(raw: string) {
@@ -153,11 +152,20 @@ export function TaskDetailsSheet({
     setCommentText('');
   }
 
+  function addSubtask() {
+    const text = subtaskInput.trim();
+    if (!text) return;
+    dispatch({ type: 'ADD_SUBTASK', payload: { workspaceId, groupId: currentGroupId, todoId: todo.id, text } });
+    setSubtaskInput('');
+  }
+
   const endTimeValue = todo.endTime
     ? new Date(todo.endTime - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16)
     : '';
 
   const otherGroups = allGroups.filter(g => g.id !== currentGroupId);
+  const subtasks = todo.subtasks ?? [];
+  const doneCount = subtasks.filter(s => s.completed).length;
 
   const sheetContent = (
     <div
@@ -203,13 +211,32 @@ export function TaskDetailsSheet({
             placeholder="Task title…"
           />
         </div>
-        <button
-          onClick={onClose}
-          className="shrink-0 flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:bg-muted transition-colors mt-0.5"
-          aria-label="Close"
-        >
-          <X size={18} />
-        </button>
+        <div className="flex items-center gap-1 shrink-0 mt-0.5">
+          {/* Complete toggle */}
+          <button
+            onClick={handleToggleComplete}
+            className={cn(
+              'flex items-center gap-1.5 h-9 px-3 rounded-xl text-sm font-semibold transition-all',
+              todo.completed
+                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400'
+                : 'bg-muted text-muted-foreground hover:bg-muted/80',
+            )}
+            aria-label={todo.completed ? 'Mark incomplete' : 'Mark complete'}
+          >
+            {todo.completed
+              ? <CheckCircle2 size={16} className="shrink-0" />
+              : <Circle size={16} className="shrink-0" />
+            }
+            <span className="hidden sm:inline">{todo.completed ? 'Done' : 'Mark done'}</span>
+          </button>
+          <button
+            onClick={onClose}
+            className="flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
+            aria-label="Close"
+          >
+            <X size={18} />
+          </button>
+        </div>
       </div>
 
       {/* Scrollable body */}
@@ -236,16 +263,81 @@ export function TaskDetailsSheet({
             </div>
           </Section>
 
+          {/* Subtasks */}
+          <Section icon={<ListTodo size={14} />} label={`Subtasks${subtasks.length > 0 ? ` (${doneCount}/${subtasks.length})` : ''}`}>
+            <div className="space-y-1.5">
+              {subtasks.map(sub => (
+                <div key={sub.id} className="flex items-center gap-2 group/sub px-2 py-1.5 rounded-xl hover:bg-muted/50 transition-colors">
+                  <button
+                    onClick={() => dispatch({ type: 'TOGGLE_SUBTASK', payload: { workspaceId, groupId: currentGroupId, todoId: todo.id, subtaskId: sub.id } })}
+                    className="shrink-0"
+                    aria-label={sub.completed ? 'Uncheck subtask' : 'Check subtask'}
+                  >
+                    {sub.completed
+                      ? <CheckCircle2 size={18} className="text-emerald-500" />
+                      : <Circle size={18} className="text-muted-foreground" />
+                    }
+                  </button>
+                  <span className={cn(
+                    'flex-1 text-sm',
+                    sub.completed && 'line-through text-muted-foreground',
+                  )}>
+                    {sub.text}
+                  </span>
+                  <button
+                    onClick={() => dispatch({ type: 'DELETE_SUBTASK', payload: { workspaceId, groupId: currentGroupId, todoId: todo.id, subtaskId: sub.id } })}
+                    className="opacity-0 group-hover/sub:opacity-100 flex items-center justify-center w-7 h-7 rounded text-muted-foreground/50 hover:text-destructive transition-all"
+                    aria-label="Delete subtask"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              ))}
+              {/* Add subtask */}
+              <div className="flex gap-2 mt-2">
+                <input
+                  type="text"
+                  value={subtaskInput}
+                  onChange={e => setSubtaskInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); addSubtask(); } }}
+                  placeholder="Add subtask…"
+                  className="flex-1 h-10 rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 placeholder:text-muted-foreground/60"
+                />
+                <button
+                  onClick={addSubtask}
+                  disabled={!subtaskInput.trim()}
+                  className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary text-primary-foreground disabled:opacity-40 disabled:cursor-not-allowed transition-opacity shrink-0"
+                  aria-label="Add subtask"
+                >
+                  <Plus size={16} />
+                </button>
+              </div>
+            </div>
+          </Section>
+
           {/* Description */}
           <Section icon={<AlignLeft size={14} />} label="Description">
-            <textarea
-              ref={descRef}
-              value={todo.description ?? ''}
-              onChange={e => patch({ description: e.target.value })}
-              placeholder="Add a description…"
-              rows={3}
-              className="w-full text-sm bg-muted/40 rounded-xl px-3 py-2.5 resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-muted-foreground/60 min-h-[80px]"
-            />
+            <button
+              onClick={() => setShowMarkdownEditor(true)}
+              className={cn(
+                'w-full text-left rounded-xl border transition-colors px-3 py-3 group',
+                todo.description
+                  ? 'border-border hover:border-primary/40 bg-muted/20 hover:bg-muted/40'
+                  : 'border-dashed border-border hover:border-primary/40 hover:bg-muted/20',
+              )}
+            >
+              {todo.description ? (
+                <div className="flex items-start gap-2">
+                  <DescriptionPreview text={todo.description} />
+                  <Pencil size={13} className="shrink-0 mt-0.5 text-muted-foreground/40 group-hover:text-muted-foreground transition-colors" />
+                </div>
+              ) : (
+                <span className="flex items-center gap-2 text-sm text-muted-foreground/60">
+                  <Pencil size={14} />
+                  Add description…
+                </span>
+              )}
+            </button>
           </Section>
 
           {/* End Time + Countdown */}
@@ -275,7 +367,6 @@ export function TaskDetailsSheet({
           {/* Color */}
           <Section icon={<Palette size={14} />} label="Color">
             <div className="flex gap-2 flex-wrap items-center">
-              {/* None option */}
               <button
                 onClick={() => patch({ color: undefined })}
                 className={cn(
@@ -370,7 +461,6 @@ export function TaskDetailsSheet({
                   ))}
                 </div>
               )}
-              {/* Add comment */}
               <div className="flex gap-2 items-end">
                 <textarea
                   value={commentText}
@@ -408,6 +498,15 @@ export function TaskDetailsSheet({
         aria-hidden="true"
       />
       {sheetContent}
+
+      {/* Markdown editor overlay */}
+      {showMarkdownEditor && (
+        <MarkdownEditor
+          initialValue={todo.description ?? ''}
+          onSave={value => patch({ description: value })}
+          onClose={() => setShowMarkdownEditor(false)}
+        />
+      )}
     </>
   );
 }
@@ -422,6 +521,39 @@ function Section({ icon, label, children }: { icon: React.ReactNode; label: stri
         {label}
       </div>
       {children}
+    </div>
+  );
+}
+
+// ─── Inline markdown preview (description card) ───────────────────────────────
+
+function DescriptionPreview({ text }: { text: string }) {
+  // Show up to 3 lines rendered simply
+  const lines = text.split('\n').filter(l => l.trim()).slice(0, 3);
+  return (
+    <div className="flex-1 space-y-1 min-w-0">
+      {lines.map((line, i) => {
+        if (line.startsWith('# ')) {
+          return <p key={i} className="text-sm font-bold truncate">{line.slice(2)}</p>;
+        }
+        if (line.startsWith('## ')) {
+          return <p key={i} className="text-sm font-semibold truncate">{line.slice(3)}</p>;
+        }
+        if (line.startsWith('- ')) {
+          return (
+            <p key={i} className="text-sm text-foreground/80 truncate flex items-center gap-1.5">
+              <span className="w-1 h-1 rounded-full bg-muted-foreground/60 shrink-0" />
+              {line.slice(2)}
+            </p>
+          );
+        }
+        // inline bold/italic stripped for preview
+        const plain = line.replace(/\*\*(.*?)\*\*/g, '$1').replace(/\*(.*?)\*/g, '$1');
+        return <p key={i} className="text-sm text-foreground/80 truncate">{plain}</p>;
+      })}
+      {text.split('\n').filter(l => l.trim()).length > 3 && (
+        <p className="text-xs text-muted-foreground/50">…more</p>
+      )}
     </div>
   );
 }

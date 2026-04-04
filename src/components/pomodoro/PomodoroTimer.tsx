@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, RotateCcw, Pause, Play, Plus, Check, Coffee, Zap } from 'lucide-react';
+import { X, RotateCcw, Pause, Play, Plus, Check, Coffee, Zap, SkipForward } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import type { PomodoroBlock } from '@/types/pomodoro';
@@ -16,6 +16,24 @@ function formatTime(seconds: number) {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function playAlarm() {
+  try {
+    const ctx = new AudioContext();
+    [0, 0.35, 0.7].forEach(offset => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = 880;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.5, ctx.currentTime + offset);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + offset + 0.28);
+      osc.start(ctx.currentTime + offset);
+      osc.stop(ctx.currentTime + offset + 0.28);
+    });
+  } catch { /* ignore */ }
 }
 
 // SVG ring progress
@@ -53,7 +71,9 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
   const [timeLeft, setTimeLeft] = useState((initialBlocks[0]?.durationMins ?? 0) * 60);
   const [isRunning, setIsRunning] = useState(true);
   const [expired, setExpired] = useState(false);
+  const [showNextConfirm, setShowNextConfirm] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const alarmFiredRef = useRef(false);
 
   const block = blocks[blockIdx] ?? null;
   const totalBlocks = blocks.length;
@@ -73,7 +93,6 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
           clearInterval(intervalRef.current!);
           setIsRunning(false);
           setExpired(true);
-          try { navigator.vibrate?.(300); } catch { /* ignore */ }
           return 0;
         }
         return prev - 1;
@@ -84,12 +103,27 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
     };
   }, [isRunning, expired, blockIdx]);
 
+  // Alarm on expiry
+  useEffect(() => {
+    if (expired && !alarmFiredRef.current) {
+      alarmFiredRef.current = true;
+      playAlarm();
+      try { navigator.vibrate?.(500); } catch { /* ignore */ }
+    }
+  }, [expired]);
+
+  // Reset alarm flag when moving to new block
+  useEffect(() => {
+    alarmFiredRef.current = false;
+  }, [blockIdx]);
+
   const goToBlock = useCallback((idx: number) => {
     if (idx < 0 || idx >= blocks.length) return;
     setBlockIdx(idx);
     setTimeLeft(blocks[idx].durationMins * 60);
     setIsRunning(true);
     setExpired(false);
+    setShowNextConfirm(false);
   }, [blocks]);
 
   function handleAddFive() {
@@ -102,17 +136,15 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
 
   function handleCheckOffAndNext() {
     if (!block) return;
-    // Toggle in store if it's a work block with a task
     if (block.type === 'work' && block.taskId && block.groupId) {
       dispatch({
         type: 'TOGGLE_TODO',
         payload: { workspaceId, groupId: block.groupId, todoId: block.taskId },
       });
     }
-    // Mark block completed in local state
     const updated = blocks.map((b, i) => i === blockIdx ? { ...b, completed: true } : b);
     setBlocks(updated);
-    // Advance
+    setShowNextConfirm(false);
     if (blockIdx + 1 < blocks.length) {
       const nextIdx = blockIdx + 1;
       setBlockIdx(nextIdx);
@@ -132,6 +164,16 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
     }
   }
 
+  // Next button pressed during active/paused state
+  function handleNextPress() {
+    // If it's a work block that isn't checked off, ask
+    if (block?.type === 'work' && !block.completed) {
+      setShowNextConfirm(true);
+    } else {
+      handleNext();
+    }
+  }
+
   function handleRestart() {
     const reset = initialBlocks.map(b => ({ ...b, completed: false }));
     setBlocks(reset);
@@ -139,6 +181,7 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
     setTimeLeft((reset[0]?.durationMins ?? 0) * 60);
     setIsRunning(true);
     setExpired(false);
+    setShowNextConfirm(false);
   }
 
   function handleChecklistToggle(b: PomodoroBlock) {
@@ -230,11 +273,56 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
             <Plus size={16} />
             5 min
           </Button>
+          <Button
+            variant="outline"
+            onClick={handleNextPress}
+            className="h-14 px-5 rounded-2xl gap-2 text-sm font-semibold"
+            aria-label="Next block"
+          >
+            <SkipForward size={16} />
+            Next
+          </Button>
         </div>
       </div>
 
+      {/* Next confirm overlay — asks to check off work task */}
+      {showNextConfirm && (
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm px-6 gap-5">
+          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+            <Check size={28} className="text-primary" />
+          </div>
+          <div className="text-center">
+            <h3 className="text-xl font-bold">Mark as done?</h3>
+            <p className="text-muted-foreground text-sm mt-1 max-w-[260px]">
+              "{block.label}" isn't checked off yet. Do you want to complete it before moving on?
+            </p>
+          </div>
+          <div className="flex flex-col gap-2.5 w-full max-w-xs">
+            <Button onClick={handleCheckOffAndNext} className="h-12 gap-2 rounded-xl font-semibold">
+              <Check size={16} />
+              Check off & continue
+            </Button>
+            <Button
+              onClick={() => { setShowNextConfirm(false); handleNext(); }}
+              variant="outline"
+              className="h-12 gap-2 rounded-xl"
+            >
+              <SkipForward size={16} />
+              Skip & continue
+            </Button>
+            <Button
+              onClick={() => setShowNextConfirm(false)}
+              variant="ghost"
+              className="h-11 text-muted-foreground rounded-xl"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Time's Up overlay */}
-      {expired && (
+      {expired && !showNextConfirm && (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm px-6 gap-5">
           <div className={cn(
             'w-20 h-20 rounded-full flex items-center justify-center',
@@ -274,7 +362,7 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
       )}
 
       {/* Task checklist */}
-      {workBlocks.length > 0 && !expired && (
+      {workBlocks.length > 0 && !expired && !showNextConfirm && (
         <div className="shrink-0 border-t border-border px-4 pt-3 pb-4" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 1rem)' }}>
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Tasks</p>
           <div className="flex flex-col gap-1.5 max-h-32 overflow-y-auto no-scrollbar">

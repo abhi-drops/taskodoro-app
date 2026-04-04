@@ -2,7 +2,7 @@ import { createContext, useContext, useReducer, useEffect, useState, useRef } fr
 import type { ReactNode } from 'react';
 import { Preferences } from '@capacitor/preferences';
 import { arrayMove } from '@dnd-kit/sortable';
-import type { AppState, Workspace, Group, Todo, GroupSettings } from '@/types/index';
+import type { AppState, Workspace, Group, Todo, GroupSettings, SubTask } from '@/types/index';
 
 const STORAGE_KEY = 'app_state';
 
@@ -25,10 +25,14 @@ export type AppAction =
   | { type: 'DELETE_TODO'; payload: { workspaceId: string; groupId: string; todoId: string } }
   | { type: 'MOVE_TODO'; payload: { workspaceId: string; todoId: string; fromGroupId: string; toGroupId: string; overIndex?: number } }
   | { type: 'REORDER_TODO'; payload: { workspaceId: string; groupId: string; activeIndex: number; overIndex: number } }
-  | { type: 'UPDATE_TODO_DETAILS'; payload: { workspaceId: string; groupId: string; todoId: string; patch: Partial<Pick<Todo, 'description' | 'priority' | 'color' | 'tags' | 'endTime' | 'text'>> } }
+  | { type: 'UPDATE_TODO_DETAILS'; payload: { workspaceId: string; groupId: string; todoId: string; patch: Partial<Pick<Todo, 'description' | 'priority' | 'color' | 'tags' | 'endTime' | 'text' | 'subtasks'>> } }
   | { type: 'ADD_COMMENT'; payload: { workspaceId: string; groupId: string; todoId: string; text: string } }
   | { type: 'DELETE_COMMENT'; payload: { workspaceId: string; groupId: string; todoId: string; commentId: string } }
-  | { type: 'UPDATE_GROUP_SETTINGS'; payload: { workspaceId: string; groupId: string; settings: GroupSettings } };
+  | { type: 'UPDATE_GROUP_SETTINGS'; payload: { workspaceId: string; groupId: string; settings: GroupSettings } }
+  | { type: 'ADD_SUBTASK'; payload: { workspaceId: string; groupId: string; todoId: string; text: string } }
+  | { type: 'TOGGLE_SUBTASK'; payload: { workspaceId: string; groupId: string; todoId: string; subtaskId: string } }
+  | { type: 'DELETE_SUBTASK'; payload: { workspaceId: string; groupId: string; todoId: string; subtaskId: string } }
+  | { type: 'UPDATE_SUBTASK_TEXT'; payload: { workspaceId: string; groupId: string; todoId: string; subtaskId: string; text: string } };
 
 function updateWorkspace(state: AppState, workspaceId: string, fn: (ws: Workspace) => Workspace): AppState {
   return {
@@ -134,7 +138,7 @@ function reducer(state: AppState, action: AppAction): AppState {
           ...ws,
           groups: ws.groups.map(g => {
             if (g.id === groupId) return { ...g, todos: g.todos.filter(t => t.id !== todoId) };
-            if (g.id === targetGroupId) return { ...g, todos: [...g.todos, todo] };
+            if (g.id === targetGroupId) return { ...g, todos: [...g.todos, { ...todo, completed: false }] };
             return g;
           }),
         }));
@@ -228,6 +232,70 @@ function reducer(state: AppState, action: AppAction): AppState {
         updateGroup(ws, action.payload.groupId, g => ({
           ...g,
           settings: { ...(g.settings ?? {}), ...action.payload.settings },
+        }))
+      );
+
+    case 'ADD_SUBTASK':
+      return updateWorkspace(state, action.payload.workspaceId, ws =>
+        updateGroup(ws, action.payload.groupId, g => ({
+          ...g,
+          todos: g.todos.map(t =>
+            t.id === action.payload.todoId
+              ? {
+                  ...t,
+                  subtasks: [
+                    ...(t.subtasks ?? []),
+                    { id: crypto.randomUUID(), text: action.payload.text, completed: false } as SubTask,
+                  ],
+                }
+              : t
+          ),
+        }))
+      );
+
+    case 'TOGGLE_SUBTASK':
+      return updateWorkspace(state, action.payload.workspaceId, ws =>
+        updateGroup(ws, action.payload.groupId, g => ({
+          ...g,
+          todos: g.todos.map(t =>
+            t.id === action.payload.todoId
+              ? {
+                  ...t,
+                  subtasks: (t.subtasks ?? []).map(s =>
+                    s.id === action.payload.subtaskId ? { ...s, completed: !s.completed } : s
+                  ),
+                }
+              : t
+          ),
+        }))
+      );
+
+    case 'DELETE_SUBTASK':
+      return updateWorkspace(state, action.payload.workspaceId, ws =>
+        updateGroup(ws, action.payload.groupId, g => ({
+          ...g,
+          todos: g.todos.map(t =>
+            t.id === action.payload.todoId
+              ? { ...t, subtasks: (t.subtasks ?? []).filter(s => s.id !== action.payload.subtaskId) }
+              : t
+          ),
+        }))
+      );
+
+    case 'UPDATE_SUBTASK_TEXT':
+      return updateWorkspace(state, action.payload.workspaceId, ws =>
+        updateGroup(ws, action.payload.groupId, g => ({
+          ...g,
+          todos: g.todos.map(t =>
+            t.id === action.payload.todoId
+              ? {
+                  ...t,
+                  subtasks: (t.subtasks ?? []).map(s =>
+                    s.id === action.payload.subtaskId ? { ...s, text: action.payload.text } : s
+                  ),
+                }
+              : t
+          ),
         }))
       );
 

@@ -1,5 +1,11 @@
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
 
+export interface SubTask {
+  id: string;
+  text: string;
+  completed: boolean;
+}
+
 export interface TaskComment {
   id: string;
   text: string;
@@ -18,6 +24,7 @@ export interface Todo {
   tags?: string[];
   comments?: TaskComment[];
   endTime?: number;
+  subtasks?: SubTask[];
 }
 
 export interface GroupSettings {
