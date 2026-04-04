@@ -25,6 +25,7 @@ import type { Todo } from '@/types/index';
 import type { PomodoroBlock } from '@/types/pomodoro';
 import { PomodoroPlanner } from '@/components/pomodoro/PomodoroPlanner';
 import { PomodoroTimer } from '@/components/pomodoro/PomodoroTimer';
+import { SearchPanel } from '@/components/SearchPanel';
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 767px)').matches);
@@ -48,6 +49,7 @@ function AppInner() {
   const [openTaskDetail, setOpenTaskDetail] = useState<{ todoId: string; groupId: string } | null>(null);
   const [pomodoroOpen, setPomodoroOpen] = useState(false);
   const [pomodoroBlocks, setPomodoroBlocks] = useState<PomodoroBlock[] | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
 
   const activeWorkspace = state.workspaces.find(w => w.id === state.activeWorkspaceId) ?? null;
 
@@ -213,6 +215,7 @@ function AppInner() {
             onDeleteGroup={handleDeleteGroup}
             onOpenTask={handleOpenTask}
             onOpenPomodoro={() => setPomodoroOpen(true)}
+            onOpenSearch={() => setSearchOpen(true)}
           />
         ) : (
           <div className="flex flex-col h-[100dvh] bg-background" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
@@ -238,6 +241,7 @@ function AppInner() {
                   onNewGroup={() => setNewGroupOpen(true)}
                   onToggleSidebar={() => setSidebarOpen(true)}
                   onOpenPomodoro={() => setPomodoroOpen(true)}
+                  onOpenSearch={() => setSearchOpen(true)}
                 />
                 <Board
                   workspace={activeWorkspace}
@@ -294,6 +298,19 @@ function AppInner() {
           onClose={handleCloseTask}
           onMove={handleMoveTask}
           dispatch={dispatch}
+        />
+      )}
+
+      {/* Search Panel */}
+      {searchOpen && activeWorkspace && (
+        <SearchPanel
+          workspace={activeWorkspace}
+          onOpenTask={(groupId, todoId) => {
+            setOpenTaskDetail({ todoId, groupId });
+            setSearchOpen(false);
+          }}
+          onClose={() => setSearchOpen(false)}
+          isMobile={isMobile}
         />
       )}
 
