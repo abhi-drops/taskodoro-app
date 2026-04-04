@@ -1,0 +1,262 @@
+import { useState, useRef, useCallback } from 'react';
+import { useDroppable } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { ChevronDown, Plus, Trash2, LayoutList } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { TodoCard } from '@/components/TodoCard';
+import { WorkspaceSheet } from '@/components/mobile/WorkspaceSheet';
+import type { Workspace } from '@/types/index';
+
+interface Props {
+  workspaces: Workspace[];
+  activeWorkspace: Workspace;
+  activeWorkspaceId: string | null;
+  activeGroupId: string | null;
+  onSetActiveGroup: (id: string) => void;
+  onSelectWorkspace: (id: string) => void;
+  onDeleteWorkspace: (id: string) => void;
+  onNewWorkspace: () => void;
+  onNewGroup: () => void;
+  onAddTodo: (groupId: string, text: string) => void;
+  onToggleTodo: (groupId: string, todoId: string) => void;
+  onDeleteTodo: (groupId: string, todoId: string) => void;
+  onDeleteGroup: (groupId: string) => void;
+}
+
+export function MobileLayout({
+  workspaces,
+  activeWorkspace,
+  activeWorkspaceId,
+  activeGroupId,
+  onSetActiveGroup,
+  onSelectWorkspace,
+  onDeleteWorkspace,
+  onNewWorkspace,
+  onNewGroup,
+  onAddTodo,
+  onToggleTodo,
+  onDeleteTodo,
+  onDeleteGroup,
+}: Props) {
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const addInputRef = useRef<HTMLInputElement>(null);
+
+  const activeGroup = activeWorkspace.groups.find(g => g.id === activeGroupId) ?? activeWorkspace.groups[0] ?? null;
+
+  const handleAddSubmit = useCallback((e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addInputRef.current || !activeGroup) return;
+    const text = addInputRef.current.value.trim();
+    if (!text) return;
+    onAddTodo(activeGroup.id, text);
+    addInputRef.current.value = '';
+  }, [activeGroup, onAddTodo]);
+
+  return (
+    <div className="flex flex-col h-[100dvh] bg-background overflow-hidden" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+      {/* Header */}
+      <header className="flex items-center gap-2 px-4 h-14 border-b border-border shrink-0">
+        <button
+          onClick={() => setSheetOpen(true)}
+          className="flex items-center gap-1.5 flex-1 min-w-0 py-1"
+          aria-label="Switch workspace"
+        >
+          <span className="font-semibold text-base truncate">{activeWorkspace.name}</span>
+          <ChevronDown size={16} className="text-muted-foreground shrink-0" />
+        </button>
+        <button
+          onClick={onNewGroup}
+          className="flex items-center gap-1 rounded-lg bg-primary text-primary-foreground px-3 h-9 text-sm font-medium shrink-0"
+          aria-label="New group"
+        >
+          <Plus size={15} />
+          Group
+        </button>
+      </header>
+
+      {/* Group tabs */}
+      {activeWorkspace.groups.length > 0 && (
+        <div className="shrink-0 border-b border-border">
+          <div className="flex gap-1.5 px-3 py-2 overflow-x-auto no-scrollbar">
+            {activeWorkspace.groups.map(group => (
+              <GroupTab
+                key={group.id}
+                group={group}
+                isActive={group.id === activeGroup?.id}
+                onSelect={() => onSetActiveGroup(group.id)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Content area */}
+      <div className="flex-1 min-h-0 flex flex-col">
+        {activeWorkspace.groups.length === 0 ? (
+          <EmptyGroups onNewGroup={onNewGroup} />
+        ) : activeGroup ? (
+          <ActiveGroupView
+            key={activeGroup.id}
+            group={activeGroup}
+            onToggleTodo={todoId => onToggleTodo(activeGroup.id, todoId)}
+            onDeleteTodo={todoId => onDeleteTodo(activeGroup.id, todoId)}
+            onDeleteGroup={() => onDeleteGroup(activeGroup.id)}
+          />
+        ) : null}
+      </div>
+
+      {/* Add todo input bar */}
+      {activeGroup && (
+        <div className="shrink-0 border-t border-border bg-background px-3 py-2" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.5rem)' }}>
+          <form onSubmit={handleAddSubmit} className="flex gap-2">
+            <Input
+              ref={addInputRef}
+              placeholder="Add a todo…"
+              className="flex-1 h-11 text-sm"
+            />
+            <button
+              type="submit"
+              className="flex items-center justify-center w-11 h-11 rounded-xl bg-primary text-primary-foreground shrink-0"
+              aria-label="Add todo"
+            >
+              <Plus size={18} />
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* Workspace bottom sheet */}
+      {sheetOpen && (
+        <WorkspaceSheet
+          workspaces={workspaces}
+          activeWorkspaceId={activeWorkspaceId}
+          onSelectWorkspace={onSelectWorkspace}
+          onDeleteWorkspace={onDeleteWorkspace}
+          onNewWorkspace={onNewWorkspace}
+          onClose={() => setSheetOpen(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+// ─── GroupTab ─────────────────────────────────────────────────────────────────
+
+interface GroupTabProps {
+  group: { id: string; name: string; todos: { completed: boolean }[] };
+  isActive: boolean;
+  onSelect: () => void;
+}
+
+function GroupTab({ group, isActive, onSelect }: GroupTabProps) {
+  const { setNodeRef, isOver } = useDroppable({ id: `tab:${group.id}` });
+  const count = group.todos.filter(t => !t.completed).length;
+
+  return (
+    <div ref={setNodeRef}>
+      <button
+        onClick={onSelect}
+        className={cn(
+          'flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 h-8 text-sm font-medium transition-colors shrink-0',
+          isActive
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-muted text-muted-foreground hover:text-foreground',
+          isOver && !isActive && 'ring-2 ring-primary/50 bg-primary/10 text-foreground',
+        )}
+        aria-pressed={isActive}
+      >
+        {group.name}
+        {count > 0 && (
+          <span className={cn(
+            'text-xs rounded-full px-1.5 min-w-[1.25rem] text-center',
+            isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-background text-foreground',
+          )}>
+            {count}
+          </span>
+        )}
+      </button>
+    </div>
+  );
+}
+
+// ─── ActiveGroupView ───────────────────────────────────────────────────────────
+
+interface ActiveGroupViewProps {
+  group: { id: string; name: string; todos: import('@/types/index').Todo[]; nextSn: number; createdAt: number };
+  onToggleTodo: (todoId: string) => void;
+  onDeleteTodo: (todoId: string) => void;
+  onDeleteGroup: () => void;
+}
+
+function ActiveGroupView({ group, onToggleTodo, onDeleteTodo, onDeleteGroup }: ActiveGroupViewProps) {
+  const { setNodeRef, isOver } = useDroppable({ id: group.id });
+
+  return (
+    <div className="flex flex-col flex-1 min-h-0">
+      {/* Group meta bar */}
+      <div className="flex items-center gap-2 px-4 py-2 shrink-0">
+        <LayoutList size={14} className="text-muted-foreground" />
+        <span className="text-sm text-muted-foreground flex-1">
+          {group.todos.filter(t => t.completed).length}/{group.todos.length} done
+        </span>
+        <button
+          onClick={onDeleteGroup}
+          className="flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors"
+          aria-label="Delete group"
+        >
+          <Trash2 size={15} />
+        </button>
+      </div>
+
+      {/* Scrollable todo list */}
+      <div
+        ref={setNodeRef}
+        className={cn(
+          'flex-1 overflow-y-auto px-3 pb-2 min-h-0 no-scrollbar transition-colors rounded-lg',
+          isOver && 'bg-primary/5',
+        )}
+      >
+        <SortableContext
+          items={group.todos.map(t => t.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {group.todos.length === 0 && (
+            <div className="flex items-center justify-center h-32 text-sm text-muted-foreground/60">
+              No todos yet — add one below
+            </div>
+          )}
+          <div className="flex flex-col gap-2 pt-1">
+            {group.todos.map(todo => (
+              <TodoCard
+                key={todo.id}
+                todo={todo}
+                onToggle={() => onToggleTodo(todo.id)}
+                onDelete={() => onDeleteTodo(todo.id)}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </div>
+    </div>
+  );
+}
+
+// ─── EmptyGroups ──────────────────────────────────────────────────────────────
+
+function EmptyGroups({ onNewGroup }: { onNewGroup: () => void }) {
+  return (
+    <div className="flex flex-col flex-1 items-center justify-center gap-3 px-6">
+      <div className="rounded-full bg-muted p-4">
+        <LayoutList size={28} className="text-muted-foreground" />
+      </div>
+      <p className="text-sm font-medium text-muted-foreground">No groups yet</p>
+      <button
+        onClick={onNewGroup}
+        className="text-sm text-primary font-medium underline-offset-4 hover:underline"
+      >
+        Create your first group →
+      </button>
+    </div>
+  );
+}

@@ -5,7 +5,8 @@
       "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('peers:', d.get\\('peerDependencies',{}\\)\\); print\\('engines:', d.get\\('engines',{}\\)\\)\")",
       "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('version:', d.get\\('version'\\)\\); print\\('engines:', d.get\\('engines',{}\\)\\)\")",
       "Bash(npm create:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Skill(claude-api)"
     ]
   }
 }

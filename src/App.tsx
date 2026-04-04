@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -15,19 +15,41 @@ import { AppProvider, useAppStore } from '@/store/useAppStore';
 import { Sidebar } from '@/components/Sidebar';
 import { BoardHeader } from '@/components/BoardHeader';
 import { Board } from '@/components/Board';
+import { MobileLayout } from '@/components/mobile/MobileLayout';
 import { TodoCard } from '@/components/TodoCard';
 import { CreateNameDialog } from '@/components/dialogs/CreateNameDialog';
 import { CheckSquare, Loader2 } from 'lucide-react';
 import type { Todo } from '@/types/index';
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 767px)').matches);
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+  return isMobile;
+}
+
 function AppInner() {
   const { state, dispatch, isLoaded } = useAppStore();
+  const isMobile = useIsMobile();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [newWorkspaceOpen, setNewWorkspaceOpen] = useState(false);
   const [newGroupOpen, setNewGroupOpen] = useState(false);
   const [activeDragTodo, setActiveDragTodo] = useState<Todo | null>(null);
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
 
   const activeWorkspace = state.workspaces.find(w => w.id === state.activeWorkspaceId) ?? null;
+
+  // Keep activeGroupId in sync: reset when workspace changes, default to first group
+  useEffect(() => {
+    if (!activeWorkspace) { setActiveGroupId(null); return; }
+    const ids = activeWorkspace.groups.map(g => g.id);
+    if (ids.length === 0) { setActiveGroupId(null); return; }
+    setActiveGroupId(prev => (prev && ids.includes(prev) ? prev : ids[0]));
+  }, [activeWorkspace?.id, activeWorkspace?.groups.map(g => g.id).join(',')]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -49,7 +71,10 @@ function AppInner() {
     if (!over || !activeWorkspace) return;
 
     const activeId = active.id as string;
-    const overId = over.id as string;
+    // Strip tab: prefix used by mobile group tab droppables
+    const rawOverId = over.id as string;
+    const overId = rawOverId.startsWith('tab:') ? rawOverId.slice(4) : rawOverId;
+
     if (activeId === overId) return;
 
     const sourceGroup = activeWorkspace.groups.find(g => g.todos.some(t => t.id === activeId));
@@ -59,6 +84,11 @@ function AppInner() {
       activeWorkspace.groups.find(g => g.id === overId) ??
       activeWorkspace.groups.find(g => g.todos.some(t => t.id === overId));
     if (!targetGroup) return;
+
+    // If dropped on a mobile tab, switch to that group
+    if (rawOverId.startsWith('tab:') && sourceGroup.id !== targetGroup.id) {
+      setActiveGroupId(targetGroup.id);
+    }
 
     if (sourceGroup.id === targetGroup.id) {
       const oldIndex = sourceGroup.todos.findIndex(t => t.id === activeId);
@@ -110,54 +140,81 @@ function AppInner() {
     );
   }
 
+  const noWorkspaceScreen = (
+    <div className="flex flex-col flex-1 items-center justify-center gap-4 text-center px-6">
+      <div className="rounded-full bg-muted p-5">
+        <CheckSquare size={40} className="text-muted-foreground" />
+      </div>
+      <div>
+        <h2 className="font-semibold text-lg">Welcome to Workspaces</h2>
+        <p className="text-sm text-muted-foreground mt-1">Create a workspace to get started</p>
+      </div>
+      <button
+        onClick={() => setNewWorkspaceOpen(true)}
+        className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+      >
+        Create your first workspace →
+      </button>
+    </div>
+  );
+
   return (
     <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="flex h-screen overflow-hidden bg-background">
-        <Sidebar
-          workspaces={state.workspaces}
-          activeWorkspaceId={state.activeWorkspaceId}
-          onSelectWorkspace={id => dispatch({ type: 'SET_ACTIVE_WORKSPACE', payload: { id } })}
-          onDeleteWorkspace={id => dispatch({ type: 'DELETE_WORKSPACE', payload: { id } })}
-          onNewWorkspace={() => setNewWorkspaceOpen(true)}
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-        />
-
-        <div className="flex flex-col flex-1 overflow-hidden">
-          {activeWorkspace ? (
-            <>
-              <BoardHeader
-                workspaceName={activeWorkspace.name}
-                onNewGroup={() => setNewGroupOpen(true)}
-                onToggleSidebar={() => setSidebarOpen(true)}
-              />
-              <Board
-                workspace={activeWorkspace}
-                onAddTodo={handleAddTodo}
-                onToggleTodo={handleToggleTodo}
-                onDeleteTodo={handleDeleteTodo}
-                onDeleteGroup={handleDeleteGroup}
-              />
-            </>
-          ) : (
-            <div className="flex flex-col flex-1 items-center justify-center gap-4 text-center px-6">
-              <div className="rounded-full bg-muted p-5">
-                <CheckSquare size={40} className="text-muted-foreground" />
-              </div>
-              <div>
-                <h2 className="font-semibold text-lg">Welcome to Workspaces</h2>
-                <p className="text-sm text-muted-foreground mt-1">Create a workspace to get started</p>
-              </div>
-              <button
-                onClick={() => setNewWorkspaceOpen(true)}
-                className="text-sm font-medium text-primary underline-offset-4 hover:underline"
-              >
-                Create your first workspace →
-              </button>
-            </div>
-          )}
+      {isMobile ? (
+        /* ── Mobile layout ── */
+        activeWorkspace ? (
+          <MobileLayout
+            workspaces={state.workspaces}
+            activeWorkspace={activeWorkspace}
+            activeWorkspaceId={state.activeWorkspaceId}
+            activeGroupId={activeGroupId}
+            onSetActiveGroup={setActiveGroupId}
+            onSelectWorkspace={id => dispatch({ type: 'SET_ACTIVE_WORKSPACE', payload: { id } })}
+            onDeleteWorkspace={id => dispatch({ type: 'DELETE_WORKSPACE', payload: { id } })}
+            onNewWorkspace={() => setNewWorkspaceOpen(true)}
+            onNewGroup={() => setNewGroupOpen(true)}
+            onAddTodo={handleAddTodo}
+            onToggleTodo={handleToggleTodo}
+            onDeleteTodo={handleDeleteTodo}
+            onDeleteGroup={handleDeleteGroup}
+          />
+        ) : (
+          <div className="flex flex-col h-[100dvh] bg-background" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+            {noWorkspaceScreen}
+          </div>
+        )
+      ) : (
+        /* ── Desktop layout ── */
+        <div className="flex h-screen overflow-hidden bg-background">
+          <Sidebar
+            workspaces={state.workspaces}
+            activeWorkspaceId={state.activeWorkspaceId}
+            onSelectWorkspace={id => dispatch({ type: 'SET_ACTIVE_WORKSPACE', payload: { id } })}
+            onDeleteWorkspace={id => dispatch({ type: 'DELETE_WORKSPACE', payload: { id } })}
+            onNewWorkspace={() => setNewWorkspaceOpen(true)}
+            isOpen={sidebarOpen}
+            onClose={() => setSidebarOpen(false)}
+          />
+          <div className="flex flex-col flex-1 overflow-hidden">
+            {activeWorkspace ? (
+              <>
+                <BoardHeader
+                  workspaceName={activeWorkspace.name}
+                  onNewGroup={() => setNewGroupOpen(true)}
+                  onToggleSidebar={() => setSidebarOpen(true)}
+                />
+                <Board
+                  workspace={activeWorkspace}
+                  onAddTodo={handleAddTodo}
+                  onToggleTodo={handleToggleTodo}
+                  onDeleteTodo={handleDeleteTodo}
+                  onDeleteGroup={handleDeleteGroup}
+                />
+              </>
+            ) : noWorkspaceScreen}
+          </div>
         </div>
-      </div>
+      )}
 
       <DragOverlay>
         {activeDragTodo && (
