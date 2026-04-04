@@ -50,7 +50,7 @@ function TimerRing({ progress, type }: { progress: number; type: 'work' | 'break
 export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dispatch }: Props) {
   const [blocks, setBlocks] = useState<PomodoroBlock[]>(initialBlocks);
   const [blockIdx, setBlockIdx] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(initialBlocks[0]?.durationMins * 60 ?? 0);
+  const [timeLeft, setTimeLeft] = useState((initialBlocks[0]?.durationMins ?? 0) * 60);
   const [isRunning, setIsRunning] = useState(true);
   const [expired, setExpired] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -136,7 +136,7 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
     const reset = initialBlocks.map(b => ({ ...b, completed: false }));
     setBlocks(reset);
     setBlockIdx(0);
-    setTimeLeft(reset[0]?.durationMins * 60 ?? 0);
+    setTimeLeft((reset[0]?.durationMins ?? 0) * 60);
     setIsRunning(true);
     setExpired(false);
   }
@@ -280,7 +280,7 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
           <div className="flex flex-col gap-1.5 max-h-32 overflow-y-auto no-scrollbar">
             {blocks
               .filter(b => b.type === 'work')
-              .map((b, i) => {
+              .map((b) => {
                 const isActive = b.id === block.id;
                 return (
                   <button
