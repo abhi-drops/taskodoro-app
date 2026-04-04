@@ -1,4 +1,4 @@
-import { PanelLeft, Plus } from 'lucide-react';
+import { PanelLeft, Plus, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
@@ -6,9 +6,10 @@ interface Props {
   workspaceName: string;
   onNewGroup: () => void;
   onToggleSidebar: () => void;
+  onOpenPomodoro: () => void;
 }
 
-export function BoardHeader({ workspaceName, onNewGroup, onToggleSidebar }: Props) {
+export function BoardHeader({ workspaceName, onNewGroup, onToggleSidebar, onOpenPomodoro }: Props) {
   return (
     <header className="flex items-center gap-3 px-4 h-14 border-b border-border bg-background/95 backdrop-blur shrink-0">
       <Button
@@ -22,6 +23,9 @@ export function BoardHeader({ workspaceName, onNewGroup, onToggleSidebar }: Prop
       </Button>
       <Separator orientation="vertical" className="h-5 md:hidden" />
       <h1 className="flex-1 font-semibold text-base truncate">{workspaceName}</h1>
+      <Button variant="ghost" size="icon" onClick={onOpenPomodoro} aria-label="Pomodoro timer" className="h-9 w-9 text-muted-foreground hover:text-foreground">
+        <Timer size={18} />
+      </Button>
       <Button size="sm" onClick={onNewGroup} className="gap-1.5">
         <Plus size={15} />
         New Group

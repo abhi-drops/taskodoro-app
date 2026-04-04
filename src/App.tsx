@@ -22,6 +22,9 @@ import { TaskDetailsSheet } from '@/components/TaskDetailsSheet';
 import { CreateNameDialog } from '@/components/dialogs/CreateNameDialog';
 import { CheckSquare, Loader2 } from 'lucide-react';
 import type { Todo } from '@/types/index';
+import type { PomodoroBlock } from '@/types/pomodoro';
+import { PomodoroPlanner } from '@/components/pomodoro/PomodoroPlanner';
+import { PomodoroTimer } from '@/components/pomodoro/PomodoroTimer';
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(() => window.matchMedia('(max-width: 767px)').matches);
@@ -43,6 +46,8 @@ function AppInner() {
   const [activeDragTodo, setActiveDragTodo] = useState<Todo | null>(null);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
   const [openTaskDetail, setOpenTaskDetail] = useState<{ todoId: string; groupId: string } | null>(null);
+  const [pomodoroOpen, setPomodoroOpen] = useState(false);
+  const [pomodoroBlocks, setPomodoroBlocks] = useState<PomodoroBlock[] | null>(null);
 
   const activeWorkspace = state.workspaces.find(w => w.id === state.activeWorkspaceId) ?? null;
 
@@ -207,6 +212,7 @@ function AppInner() {
             onDeleteTodo={handleDeleteTodo}
             onDeleteGroup={handleDeleteGroup}
             onOpenTask={handleOpenTask}
+            onOpenPomodoro={() => setPomodoroOpen(true)}
           />
         ) : (
           <div className="flex flex-col h-[100dvh] bg-background" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
@@ -231,6 +237,7 @@ function AppInner() {
                   workspaceName={activeWorkspace.name}
                   onNewGroup={() => setNewGroupOpen(true)}
                   onToggleSidebar={() => setSidebarOpen(true)}
+                  onOpenPomodoro={() => setPomodoroOpen(true)}
                 />
                 <Board
                   workspace={activeWorkspace}
@@ -287,6 +294,28 @@ function AppInner() {
           onClose={handleCloseTask}
           onMove={handleMoveTask}
           dispatch={dispatch}
+        />
+      )}
+
+      {/* Pomodoro Planner */}
+      {pomodoroOpen && activeWorkspace && (
+        <PomodoroPlanner
+          workspace={activeWorkspace}
+          onClose={() => setPomodoroOpen(false)}
+          onStart={blocks => {
+            setPomodoroBlocks(blocks);
+            setPomodoroOpen(false);
+          }}
+        />
+      )}
+
+      {/* Pomodoro Timer */}
+      {pomodoroBlocks && activeWorkspace && (
+        <PomodoroTimer
+          blocks={pomodoroBlocks}
+          workspaceId={activeWorkspace.id}
+          dispatch={dispatch}
+          onClose={() => setPomodoroBlocks(null)}
         />
       )}
     </DndContext>

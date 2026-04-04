@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { ChevronDown, Plus, Trash2, LayoutList, Settings } from 'lucide-react';
+import { ChevronDown, Plus, Trash2, LayoutList, Settings, Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { TodoCard } from '@/components/TodoCard';
@@ -25,6 +25,7 @@ interface Props {
   onDeleteTodo: (groupId: string, todoId: string) => void;
   onDeleteGroup: (groupId: string) => void;
   onOpenTask: (groupId: string, todoId: string) => void;
+  onOpenPomodoro: () => void;
 }
 
 export function MobileLayout({
@@ -42,6 +43,7 @@ export function MobileLayout({
   onDeleteTodo,
   onDeleteGroup,
   onOpenTask,
+  onOpenPomodoro,
 }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const addInputRef = useRef<HTMLInputElement>(null);
@@ -68,6 +70,13 @@ export function MobileLayout({
         >
           <span className="font-semibold text-base truncate">{activeWorkspace.name}</span>
           <ChevronDown size={16} className="text-muted-foreground shrink-0" />
+        </button>
+        <button
+          onClick={onOpenPomodoro}
+          className="flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+          aria-label="Pomodoro timer"
+        >
+          <Timer size={18} />
         </button>
         <button
           onClick={onNewGroup}
