@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import type { PomodoroBlock } from '@/types/pomodoro';
 import type { AppAction } from '@/store/useAppStore';
+import { AlarmSound } from '@/plugins/AlarmSound';
 
 interface Props {
   blocks: PomodoroBlock[];
@@ -18,22 +19,12 @@ function formatTime(seconds: number) {
   return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
 }
 
-function playAlarm() {
-  try {
-    const ctx = new AudioContext();
-    [0, 0.35, 0.7].forEach(offset => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.value = 880;
-      osc.type = 'sine';
-      gain.gain.setValueAtTime(0.5, ctx.currentTime + offset);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + offset + 0.28);
-      osc.start(ctx.currentTime + offset);
-      osc.stop(ctx.currentTime + offset + 0.28);
-    });
-  } catch { /* ignore */ }
+function stopAlarm() {
+  AlarmSound.stop().catch(() => { /* ignore */ });
+}
+
+function playAlarmLoop() {
+  AlarmSound.start().catch(() => { /* ignore */ });
 }
 
 // SVG ring progress
@@ -103,13 +94,17 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
     };
   }, [isRunning, expired, blockIdx]);
 
-  // Alarm on expiry
+  // Alarm on expiry — loop until dismissed
   useEffect(() => {
     if (expired && !alarmFiredRef.current) {
       alarmFiredRef.current = true;
-      playAlarm();
-      try { navigator.vibrate?.(500); } catch { /* ignore */ }
+      playAlarmLoop();
     }
+  }, [expired]);
+
+  // Stop alarm whenever expired clears
+  useEffect(() => {
+    if (!expired) stopAlarm();
   }, [expired]);
 
   // Reset alarm flag when moving to new block
@@ -119,6 +114,7 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
 
   const goToBlock = useCallback((idx: number) => {
     if (idx < 0 || idx >= blocks.length) return;
+    stopAlarm();
     setBlockIdx(idx);
     setTimeLeft(blocks[idx].durationMins * 60);
     setIsRunning(true);
@@ -127,6 +123,7 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
   }, [blocks]);
 
   function handleAddFive() {
+    stopAlarm();
     setTimeLeft(prev => prev + 300);
     if (expired) {
       setExpired(false);
@@ -175,6 +172,7 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
   }
 
   function handleRestart() {
+    stopAlarm();
     const reset = initialBlocks.map(b => ({ ...b, completed: false }));
     setBlocks(reset);
     setBlockIdx(0);
@@ -200,7 +198,7 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-3 shrink-0">
         <button
-          onClick={onClose}
+          onClick={() => { stopAlarm(); onClose(); }}
           className="w-10 h-10 flex items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           aria-label="Close timer"
         >
