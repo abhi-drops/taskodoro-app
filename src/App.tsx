@@ -8,6 +8,7 @@ import {
   useSensors,
   type DragStartEvent,
   type DragEndEvent,
+  type DragOverEvent,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { TooltipProvider } from '@/components/ui/tooltip';
@@ -17,6 +18,7 @@ import { BoardHeader } from '@/components/BoardHeader';
 import { Board } from '@/components/Board';
 import { MobileLayout } from '@/components/mobile/MobileLayout';
 import { TodoCard } from '@/components/TodoCard';
+import { TaskDetailsSheet } from '@/components/TaskDetailsSheet';
 import { CreateNameDialog } from '@/components/dialogs/CreateNameDialog';
 import { CheckSquare, Loader2 } from 'lucide-react';
 import type { Todo } from '@/types/index';
@@ -40,8 +42,16 @@ function AppInner() {
   const [newGroupOpen, setNewGroupOpen] = useState(false);
   const [activeDragTodo, setActiveDragTodo] = useState<Todo | null>(null);
   const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
+  const [openTaskDetail, setOpenTaskDetail] = useState<{ todoId: string; groupId: string } | null>(null);
 
   const activeWorkspace = state.workspaces.find(w => w.id === state.activeWorkspaceId) ?? null;
+
+  // Derive open todo — becomes null if todo is deleted, closing the sheet
+  const openTodo = openTaskDetail
+    ? (activeWorkspace?.groups
+        .find(g => g.id === openTaskDetail.groupId)
+        ?.todos.find(t => t.id === openTaskDetail.todoId) ?? null)
+    : null;
 
   // Keep activeGroupId in sync: reset when workspace changes, default to first group
   useEffect(() => {
@@ -65,13 +75,21 @@ function AppInner() {
     }
   }
 
+  function handleDragOver(event: DragOverEvent) {
+    if (!activeWorkspace) return;
+    const rawOverId = event.over?.id as string | undefined;
+    if (!rawOverId?.startsWith('tab:')) return;
+    const tabGroupId = rawOverId.slice(4);
+    // Switch active group mid-drag so the group content mounts as a drop target
+    setActiveGroupId(prev => (prev === tabGroupId ? prev : tabGroupId));
+  }
+
   function handleDragEnd(event: DragEndEvent) {
     setActiveDragTodo(null);
     const { active, over } = event;
     if (!over || !activeWorkspace) return;
 
     const activeId = active.id as string;
-    // Strip tab: prefix used by mobile group tab droppables
     const rawOverId = over.id as string;
     const overId = rawOverId.startsWith('tab:') ? rawOverId.slice(4) : rawOverId;
 
@@ -85,7 +103,6 @@ function AppInner() {
       activeWorkspace.groups.find(g => g.todos.some(t => t.id === overId));
     if (!targetGroup) return;
 
-    // If dropped on a mobile tab, switch to that group
     if (rawOverId.startsWith('tab:') && sourceGroup.id !== targetGroup.id) {
       setActiveGroupId(targetGroup.id);
     }
@@ -93,7 +110,8 @@ function AppInner() {
     if (sourceGroup.id === targetGroup.id) {
       const oldIndex = sourceGroup.todos.findIndex(t => t.id === activeId);
       const newIndex = sourceGroup.todos.findIndex(t => t.id === overId);
-      if (oldIndex !== newIndex) {
+      // newIndex === -1 means overId is the group container itself, not a todo — skip
+      if (newIndex !== -1 && oldIndex !== newIndex) {
         dispatch({
           type: 'REORDER_TODO',
           payload: { workspaceId: activeWorkspace.id, groupId: sourceGroup.id, activeIndex: oldIndex, overIndex: newIndex },
@@ -132,6 +150,18 @@ function AppInner() {
     dispatch({ type: 'DELETE_GROUP', payload: { workspaceId, groupId } });
   }, [dispatch, workspaceId]);
 
+  const handleOpenTask = useCallback((groupId: string, todoId: string) => {
+    setOpenTaskDetail({ todoId, groupId });
+  }, []);
+
+  const handleCloseTask = useCallback(() => {
+    setOpenTaskDetail(null);
+  }, []);
+
+  const handleMoveTask = useCallback((newGroupId: string) => {
+    setOpenTaskDetail(prev => prev ? { todoId: prev.todoId, groupId: newGroupId } : null);
+  }, []);
+
   if (!isLoaded) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
@@ -159,9 +189,8 @@ function AppInner() {
   );
 
   return (
-    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
       {isMobile ? (
-        /* ── Mobile layout ── */
         activeWorkspace ? (
           <MobileLayout
             workspaces={state.workspaces}
@@ -177,6 +206,7 @@ function AppInner() {
             onToggleTodo={handleToggleTodo}
             onDeleteTodo={handleDeleteTodo}
             onDeleteGroup={handleDeleteGroup}
+            onOpenTask={handleOpenTask}
           />
         ) : (
           <div className="flex flex-col h-[100dvh] bg-background" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
@@ -184,7 +214,6 @@ function AppInner() {
           </div>
         )
       ) : (
-        /* ── Desktop layout ── */
         <div className="flex h-screen overflow-hidden bg-background">
           <Sidebar
             workspaces={state.workspaces}
@@ -209,6 +238,7 @@ function AppInner() {
                   onToggleTodo={handleToggleTodo}
                   onDeleteTodo={handleDeleteTodo}
                   onDeleteGroup={handleDeleteGroup}
+                  onOpenTask={handleOpenTask}
                 />
               </>
             ) : noWorkspaceScreen}
@@ -222,6 +252,7 @@ function AppInner() {
             todo={activeDragTodo}
             onToggle={() => {}}
             onDelete={() => {}}
+            onOpen={() => {}}
             isDragOverlay
           />
         )}
@@ -244,6 +275,20 @@ function AppInner() {
         title="New Group"
         placeholder="Group name…"
       />
+
+      {/* Task details sheet — rendered at root level for correct z-ordering */}
+      {openTodo && activeWorkspace && openTaskDetail && (
+        <TaskDetailsSheet
+          todo={openTodo}
+          currentGroupId={openTaskDetail.groupId}
+          workspaceId={activeWorkspace.id}
+          allGroups={activeWorkspace.groups}
+          isMobile={isMobile}
+          onClose={handleCloseTask}
+          onMove={handleMoveTask}
+          dispatch={dispatch}
+        />
+      )}
     </DndContext>
   );
 }

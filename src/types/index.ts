@@ -1,9 +1,27 @@
+export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
+
+export interface TaskComment {
+  id: string;
+  text: string;
+  createdAt: number;
+}
+
 export interface Todo {
   id: string;
   sn: number;
   text: string;
   completed: boolean;
   createdAt: number;
+  description?: string;
+  priority?: TaskPriority;
+  color?: string;
+  tags?: string[];
+  comments?: TaskComment[];
+  endTime?: number;
+}
+
+export interface GroupSettings {
+  onCompleteMoveTo?: string | null;
 }
 
 export interface Group {
@@ -12,6 +30,7 @@ export interface Group {
   todos: Todo[];
   nextSn: number;
   createdAt: number;
+  settings?: GroupSettings;
 }
 
 export interface Workspace {

@@ -9,9 +9,10 @@ interface Props {
   onToggleTodo: (groupId: string, todoId: string) => void;
   onDeleteTodo: (groupId: string, todoId: string) => void;
   onDeleteGroup: (groupId: string) => void;
+  onOpenTask: (groupId: string, todoId: string) => void;
 }
 
-export function Board({ workspace, onAddTodo, onToggleTodo, onDeleteTodo, onDeleteGroup }: Props) {
+export function Board({ workspace, onAddTodo, onToggleTodo, onDeleteTodo, onDeleteGroup, onOpenTask }: Props) {
   if (workspace.groups.length === 0) {
     return (
       <div className="flex flex-1 items-center justify-center">
@@ -35,10 +36,12 @@ export function Board({ workspace, onAddTodo, onToggleTodo, onDeleteTodo, onDele
           <GroupColumn
             key={group.id}
             group={group}
+            allGroups={workspace.groups}
             onAddTodo={text => onAddTodo(group.id, text)}
             onToggleTodo={todoId => onToggleTodo(group.id, todoId)}
             onDeleteTodo={todoId => onDeleteTodo(group.id, todoId)}
             onDeleteGroup={() => onDeleteGroup(group.id)}
+            onOpenTask={todoId => onOpenTask(group.id, todoId)}
           />
         ))}
       </div>

@@ -1,12 +1,14 @@
 import { useState, useRef, useCallback } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { ChevronDown, Plus, Trash2, LayoutList } from 'lucide-react';
+import { ChevronDown, Plus, Trash2, LayoutList, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { TodoCard } from '@/components/TodoCard';
 import { WorkspaceSheet } from '@/components/mobile/WorkspaceSheet';
-import type { Workspace } from '@/types/index';
+import { GroupSettingsSheet } from '@/components/GroupSettingsSheet';
+import { useAppStore } from '@/store/useAppStore';
+import type { Workspace, Group } from '@/types/index';
 
 interface Props {
   workspaces: Workspace[];
@@ -22,6 +24,7 @@ interface Props {
   onToggleTodo: (groupId: string, todoId: string) => void;
   onDeleteTodo: (groupId: string, todoId: string) => void;
   onDeleteGroup: (groupId: string) => void;
+  onOpenTask: (groupId: string, todoId: string) => void;
 }
 
 export function MobileLayout({
@@ -38,6 +41,7 @@ export function MobileLayout({
   onToggleTodo,
   onDeleteTodo,
   onDeleteGroup,
+  onOpenTask,
 }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const addInputRef = useRef<HTMLInputElement>(null);
@@ -99,9 +103,11 @@ export function MobileLayout({
           <ActiveGroupView
             key={activeGroup.id}
             group={activeGroup}
+            allGroups={activeWorkspace.groups}
             onToggleTodo={todoId => onToggleTodo(activeGroup.id, todoId)}
             onDeleteTodo={todoId => onDeleteTodo(activeGroup.id, todoId)}
             onDeleteGroup={() => onDeleteGroup(activeGroup.id)}
+            onOpenTask={todoId => onOpenTask(activeGroup.id, todoId)}
           />
         ) : null}
       </div>
@@ -183,14 +189,19 @@ function GroupTab({ group, isActive, onSelect }: GroupTabProps) {
 // ─── ActiveGroupView ───────────────────────────────────────────────────────────
 
 interface ActiveGroupViewProps {
-  group: { id: string; name: string; todos: import('@/types/index').Todo[]; nextSn: number; createdAt: number };
+  group: Group;
+  allGroups: Group[];
   onToggleTodo: (todoId: string) => void;
   onDeleteTodo: (todoId: string) => void;
   onDeleteGroup: () => void;
+  onOpenTask: (todoId: string) => void;
 }
 
-function ActiveGroupView({ group, onToggleTodo, onDeleteTodo, onDeleteGroup }: ActiveGroupViewProps) {
+function ActiveGroupView({ group, allGroups, onToggleTodo, onDeleteTodo, onDeleteGroup, onOpenTask }: ActiveGroupViewProps) {
   const { setNodeRef, isOver } = useDroppable({ id: group.id });
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const { dispatch, state } = useAppStore();
+  const workspaceId = state.activeWorkspaceId ?? '';
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -200,6 +211,13 @@ function ActiveGroupView({ group, onToggleTodo, onDeleteTodo, onDeleteGroup }: A
         <span className="text-sm text-muted-foreground flex-1">
           {group.todos.filter(t => t.completed).length}/{group.todos.length} done
         </span>
+        <button
+          onClick={() => setSettingsOpen(true)}
+          className="flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted transition-colors"
+          aria-label="Group settings"
+        >
+          <Settings size={15} />
+        </button>
         <button
           onClick={onDeleteGroup}
           className="flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors"
@@ -233,11 +251,23 @@ function ActiveGroupView({ group, onToggleTodo, onDeleteTodo, onDeleteGroup }: A
                 todo={todo}
                 onToggle={() => onToggleTodo(todo.id)}
                 onDelete={() => onDeleteTodo(todo.id)}
+                onOpen={() => onOpenTask(todo.id)}
               />
             ))}
           </div>
         </SortableContext>
       </div>
+
+      {/* Group settings sheet */}
+      {settingsOpen && (
+        <GroupSettingsSheet
+          group={group}
+          allGroups={allGroups}
+          workspaceId={workspaceId}
+          onClose={() => setSettingsOpen(false)}
+          dispatch={dispatch}
+        />
+      )}
     </div>
   );
 }
