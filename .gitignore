@@ -14,6 +14,7 @@ dist-ssr
 .android
 android
 
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
