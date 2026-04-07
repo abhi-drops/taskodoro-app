@@ -184,17 +184,17 @@ function GroupTab({ group, isActive, onSelect }: GroupTabProps) {
         className={cn(
           'flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 h-8 text-sm font-medium transition-colors shrink-0',
           isActive
-            ? 'bg-primary text-primary-foreground'
+            ? 'bg-secondary text-secondary-foreground'
             : 'bg-muted text-muted-foreground hover:text-foreground',
           isOver && !isActive && 'ring-2 ring-primary/50 bg-primary/10 text-foreground',
         )}
         aria-pressed={isActive}
       >
-        {group.name}
+        {group.name} 
         {count > 0 && (
           <span className={cn(
             'text-xs rounded-full px-1.5 min-w-[1.25rem] text-center',
-            isActive ? 'bg-primary-foreground/20 text-primary-foreground' : 'bg-background text-foreground',
+            isActive ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground',
           )}>
             {count}
           </span>

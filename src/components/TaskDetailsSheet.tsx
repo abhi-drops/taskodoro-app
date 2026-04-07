@@ -24,7 +24,7 @@ const PRIORITY_CONFIG: Record<TaskPriority, { label: string; color: string; dot:
   low:    { label: 'Low',    color: 'bg-muted text-muted-foreground',                  dot: 'bg-muted-foreground/40' },
   medium: { label: 'Medium', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',    dot: 'bg-blue-500' },
   high:   { label: 'High',   color: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300', dot: 'bg-amber-500' },
-  urgent: { label: 'Urgent', color: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',       dot: 'bg-red-500' },
+  urgent: { label: 'Urgent', color: 'bg-primary text-primary-foreground',       dot: 'bg-primary-foreground' },
 };
 
 const PRESET_COLORS = [
@@ -63,10 +63,10 @@ function CountdownDisplay({ endTime }: { endTime?: number }) {
     <div className={cn(
       'flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-medium',
       cd.isOverdue
-        ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+        ? 'bg-primary text-primary-foreground'
         : cd.isExpiringSoon
           ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-          : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+          : 'bg-secondary text-secondary-foreground',
     )}>
       <Clock size={14} className="shrink-0" />
       {cd.isOverdue ? `Overdue by ${timeStr}` : `${timeStr} remaining`}
@@ -218,7 +218,7 @@ export function TaskDetailsSheet({
             className={cn(
               'flex items-center gap-1.5 h-9 px-3 rounded-xl text-sm font-semibold transition-all',
               todo.completed
-                ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400'
+                ? 'bg-secondary text-secondary-foreground'
                 : 'bg-muted text-muted-foreground hover:bg-muted/80',
             )}
             aria-label={todo.completed ? 'Mark incomplete' : 'Mark complete'}
@@ -274,7 +274,7 @@ export function TaskDetailsSheet({
                     aria-label={sub.completed ? 'Uncheck subtask' : 'Check subtask'}
                   >
                     {sub.completed
-                      ? <CheckCircle2 size={18} className="text-emerald-500" />
+                      ? <CheckCircle2 size={18} className="text-secondary" />
                       : <Circle size={18} className="text-muted-foreground" />
                     }
                   </button>
@@ -286,7 +286,7 @@ export function TaskDetailsSheet({
                   </span>
                   <button
                     onClick={() => dispatch({ type: 'DELETE_SUBTASK', payload: { workspaceId, groupId: currentGroupId, todoId: todo.id, subtaskId: sub.id } })}
-                    className="opacity-0 group-hover/sub:opacity-100 flex items-center justify-center w-7 h-7 rounded text-muted-foreground/50 hover:text-destructive transition-all"
+                    className="opacity-0 group-hover/sub:opacity-100 flex items-center justify-center w-7 h-7 rounded text-muted-foreground/50 hover:text-primary transition-all"
                     aria-label="Delete subtask"
                   >
                     <Trash2 size={13} />
@@ -353,7 +353,7 @@ export function TaskDetailsSheet({
                 {todo.endTime && (
                   <button
                     onClick={() => patch({ endTime: undefined })}
-                    className="flex items-center justify-center w-11 h-11 rounded-xl border border-border text-muted-foreground hover:text-destructive hover:border-destructive transition-colors"
+                    className="flex items-center justify-center w-11 h-11 rounded-xl border border-border text-muted-foreground hover:text-primary hover:border-primary transition-colors"
                     aria-label="Clear due date"
                   >
                     <X size={15} />
@@ -450,7 +450,7 @@ export function TaskDetailsSheet({
                         <span className="text-xs text-muted-foreground">{formatRelativeTime(comment.createdAt)}</span>
                         <button
                           onClick={() => dispatch({ type: 'DELETE_COMMENT', payload: { workspaceId, groupId: currentGroupId, todoId: todo.id, commentId: comment.id } })}
-                          className="opacity-0 group-hover/comment:opacity-100 flex items-center justify-center w-6 h-6 rounded text-muted-foreground/50 hover:text-destructive transition-all"
+                          className="opacity-0 group-hover/comment:opacity-100 flex items-center justify-center w-6 h-6 rounded text-muted-foreground/50 hover:text-primary transition-all"
                           aria-label="Delete comment"
                         >
                           <Trash2 size={12} />

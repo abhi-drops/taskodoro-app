@@ -49,7 +49,7 @@ function TimerRing({ progress, type }: { progress: number; type: 'work' | 'break
         strokeDashoffset={offset}
         className={cn(
           'transition-all duration-1000',
-          type === 'work' ? 'stroke-primary' : 'stroke-emerald-500',
+          type === 'work' ? 'stroke-primary' : 'stroke-secondary',
         )}
       />
     </svg>
@@ -207,7 +207,7 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
         <div className="flex items-center gap-1.5">
           <span className={cn(
             'text-xs font-semibold px-2.5 py-1 rounded-full',
-            block.type === 'work' ? 'bg-primary/10 text-primary' : 'bg-emerald-500/10 text-emerald-600',
+            block.type === 'work' ? 'bg-primary/10 text-primary' : 'bg-secondary text-secondary-foreground',
           )}>
             {block.type === 'work' ? (
               <span className="flex items-center gap-1"><Zap size={11} />Work</span>
@@ -324,7 +324,7 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm px-6 gap-5">
           <div className={cn(
             'w-20 h-20 rounded-full flex items-center justify-center',
-            block.type === 'work' ? 'bg-primary/10' : 'bg-emerald-500/10',
+            block.type === 'work' ? 'bg-primary/10' : 'bg-secondary',
           )}>
             <span className="text-4xl">⏰</span>
           </div>

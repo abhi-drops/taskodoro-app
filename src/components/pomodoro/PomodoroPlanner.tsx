@@ -206,7 +206,7 @@ function Step1({
                 onClick={() => onSetBreak(m)}
                 className={cn(
                   'px-2.5 py-1 rounded-lg text-sm font-medium transition-colors',
-                  breakMins === m ? 'bg-emerald-500 text-white' : 'bg-muted text-muted-foreground hover:text-foreground',
+                  breakMins === m ? 'bg-secondary text-secondary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground',
                 )}
               >
                 {m}
@@ -290,7 +290,7 @@ function Step2({ blocks, onChange, onBack, onStart }: Step2Props) {
             key={block.id}
             className={cn(
               'flex items-center gap-2 p-2.5 rounded-xl border',
-              block.type === 'work' ? 'border-primary/20 bg-primary/5' : 'border-emerald-500/20 bg-emerald-500/5',
+              block.type === 'work' ? 'border-primary/20 bg-primary/5' : 'border-secondary/30 bg-secondary/10',
             )}
           >
             {/* Up/Down */}
@@ -318,7 +318,7 @@ function Step2({ blocks, onChange, onBack, onStart }: Step2Props) {
                 'shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full transition-colors',
                 block.type === 'work'
                   ? 'bg-primary/15 text-primary'
-                  : 'bg-emerald-500/15 text-emerald-600',
+                  : 'bg-secondary text-secondary-foreground',
               )}
             >
               {block.type === 'work' ? 'Work' : 'Break'}

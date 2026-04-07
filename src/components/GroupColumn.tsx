@@ -46,7 +46,7 @@ export function GroupColumn({ group, allGroups, onAddTodo, onToggleTodo, onDelet
         <LayoutList size={16} className="text-muted-foreground shrink-0" />
         <span className="flex-1 font-semibold text-sm truncate">{group.name}</span>
         <Badge variant="secondary" className="text-xs font-mono h-5 px-1.5">
-          {completedCount}/{group.todos.length}
+          {completedCount}/{group.todos.length} 
         </Badge>
         <button
           onClick={() => setSettingsOpen(true)}
