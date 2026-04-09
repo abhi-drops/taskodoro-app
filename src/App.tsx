@@ -171,24 +171,24 @@ function AppInner() {
 
   if (!isLoaded) {
     return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <Loader2 size={24} className="animate-spin text-muted-foreground" />
+      <div className="flex h-screen items-center justify-center" style={{ background: 'oklch(0.07 0.005 30)' }}>
+        <Loader2 size={24} className="animate-spin text-white/30" />
       </div>
     );
   }
 
   const noWorkspaceScreen = (
-    <div className="flex flex-col flex-1 items-center justify-center gap-4 text-center px-6">
-      <div className="rounded-full bg-muted p-5">
-        <CheckSquare size={40} className="text-muted-foreground" />
+    <div className="flex flex-col flex-1 items-center justify-center gap-5 text-center px-6" style={{ background: 'oklch(0.07 0.005 30)' }}>
+      <div className="rounded-3xl bg-white/6 border border-white/8 p-5">
+        <CheckSquare size={40} className="text-white/25" />
       </div>
       <div>
-        <h2 className="font-semibold text-lg">Welcome to Workspaces</h2>
-        <p className="text-sm text-muted-foreground mt-1">Create a workspace to get started</p>
+        <h2 className="font-black text-xl text-white">Welcome</h2>
+        <p className="text-sm text-white/40 mt-1">Create a workspace to get started</p>
       </div>
       <button
         onClick={() => setNewWorkspaceOpen(true)}
-        className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+        className="text-sm font-bold text-white px-5 py-2.5 rounded-2xl bg-primary/15 border border-primary/30 hover:bg-primary/25 transition-colors active:scale-95"
       >
         Create your first workspace →
       </button>
@@ -218,12 +218,12 @@ function AppInner() {
             onOpenSearch={() => setSearchOpen(true)}
           />
         ) : (
-          <div className="flex flex-col h-[100dvh] bg-background" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+          <div className="flex flex-col h-[100dvh]" style={{ paddingTop: 'env(safe-area-inset-top)', background: 'oklch(0.07 0.005 30)' }}>
             {noWorkspaceScreen}
           </div>
         )
       ) : (
-        <div className="flex h-screen overflow-hidden bg-background">
+        <div className="flex h-screen overflow-hidden" style={{ background: 'oklch(0.07 0.005 30)' }}>
           <Sidebar
             workspaces={state.workspaces}
             activeWorkspaceId={state.activeWorkspaceId}

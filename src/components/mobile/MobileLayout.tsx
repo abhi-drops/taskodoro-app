@@ -3,7 +3,6 @@ import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { ChevronDown, Plus, Trash2, LayoutList, Settings, Timer, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Input } from '@/components/ui/input';
 import { TodoCard } from '@/components/TodoCard';
 import { WorkspaceSheet } from '@/components/mobile/WorkspaceSheet';
 import { GroupSettingsSheet } from '@/components/GroupSettingsSheet';
@@ -62,34 +61,41 @@ export function MobileLayout({
   }, [activeGroup, onAddTodo]);
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-background overflow-hidden" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+    <div
+      className="flex flex-col h-[100dvh] overflow-hidden"
+      style={{
+        paddingTop: 'env(safe-area-inset-top)',
+        background: 'oklch(0.07 0.005 30)',
+      }}
+    >
       {/* Header */}
-      <header className="flex items-center gap-2 px-4 h-14 border-b border-border shrink-0">
+      <header className="flex items-center gap-2 px-4 h-14 shrink-0 border-b border-white/8">
         <button
           onClick={() => setSheetOpen(true)}
           className="flex items-center gap-1.5 flex-1 min-w-0 py-1"
           aria-label="Switch workspace"
         >
-          <span className="font-semibold text-base truncate">{activeWorkspace.name}</span>
-          <ChevronDown size={16} className="text-muted-foreground shrink-0" />
+          <span className="font-bold text-base text-white truncate">{activeWorkspace.name}</span>
+          <ChevronDown size={15} className="text-white/40 shrink-0" />
         </button>
+
         <button
           onClick={onOpenSearch}
-          className="flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+          className="flex items-center justify-center w-10 h-10 rounded-2xl bg-white/8 text-white/60 hover:text-white hover:bg-white/15 transition-colors shrink-0"
           aria-label="Search tasks"
         >
-          <Search size={18} />
+          <Search size={17} />
         </button>
         <button
           onClick={onOpenPomodoro}
-          className="flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shrink-0"
+          className="flex items-center justify-center w-10 h-10 rounded-2xl bg-white/8 text-white/60 hover:text-white hover:bg-white/15 transition-colors shrink-0"
           aria-label="Pomodoro timer"
         >
-          <Timer size={18} />
+          <Timer size={17} />
         </button>
         <button
           onClick={onNewGroup}
-          className="flex items-center gap-1 rounded-lg bg-primary text-primary-foreground px-3 h-9 text-sm font-medium shrink-0"
+          className="flex items-center gap-1.5 rounded-2xl bg-primary text-white px-3.5 h-9 text-sm font-semibold shrink-0 active:scale-95 transition-all shadow-lg shadow-primary/30"
           aria-label="New group"
         >
           <Plus size={15} />
@@ -99,7 +105,7 @@ export function MobileLayout({
 
       {/* Group tabs */}
       {activeWorkspace.groups.length > 0 && (
-        <div className="shrink-0 border-b border-border">
+        <div className="shrink-0 border-b border-white/8">
           <div className="flex gap-1.5 px-3 py-2 overflow-x-auto no-scrollbar">
             {activeWorkspace.groups.map(group => (
               <GroupTab
@@ -132,16 +138,19 @@ export function MobileLayout({
 
       {/* Add todo input bar */}
       {activeGroup && (
-        <div className="shrink-0 border-t border-border bg-background px-3 py-2" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.5rem)' }}>
+        <div
+          className="shrink-0 border-t border-white/8 px-3 py-2"
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.5rem)' }}
+        >
           <form onSubmit={handleAddSubmit} className="flex gap-2">
-            <Input
+            <input
               ref={addInputRef}
               placeholder="Add a todo…"
-              className="flex-1 h-11 text-sm"
+              className="flex-1 h-12 rounded-2xl bg-white/8 border border-white/10 text-white text-sm px-4 placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white/12 transition-all"
             />
             <button
               type="submit"
-              className="flex items-center justify-center w-11 h-11 rounded-xl bg-primary text-primary-foreground shrink-0"
+              className="flex items-center justify-center w-12 h-12 rounded-2xl bg-primary text-white shrink-0 active:scale-95 transition-all shadow-lg shadow-primary/30"
               aria-label="Add todo"
             >
               <Plus size={18} />
@@ -150,7 +159,6 @@ export function MobileLayout({
         </div>
       )}
 
-      {/* Workspace bottom sheet */}
       {sheetOpen && (
         <WorkspaceSheet
           workspaces={workspaces}
@@ -181,20 +189,20 @@ function GroupTab({ group, isActive, onSelect }: GroupTabProps) {
     <div ref={setNodeRef}>
       <button
         onClick={onSelect}
-        className={cn(
-          'flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 h-8 text-sm font-medium transition-colors shrink-0',
-          isActive
-            ? 'bg-secondary text-secondary-foreground'
-            : 'bg-muted text-muted-foreground hover:text-foreground',
-          isOver && !isActive && 'ring-2 ring-primary/50 bg-primary/10 text-foreground',
-        )}
         aria-pressed={isActive}
+        className={cn(
+          'flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 h-8 text-sm font-semibold transition-all shrink-0',
+          isActive
+            ? 'bg-primary text-white shadow-md shadow-primary/30'
+            : 'bg-white/8 text-white/50 hover:text-white hover:bg-white/15',
+          isOver && !isActive && 'ring-2 ring-primary/50 bg-primary/15 text-white',
+        )}
       >
-        {group.name} 
+        {group.name}
         {count > 0 && (
           <span className={cn(
-            'text-xs rounded-full px-1.5 min-w-[1.25rem] text-center',
-            isActive ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground',
+            'text-xs rounded-full px-1.5 min-w-[1.25rem] text-center font-bold',
+            isActive ? 'bg-white/20 text-white' : 'bg-white/10 text-white/60',
           )}>
             {count}
           </span>
@@ -220,28 +228,40 @@ function ActiveGroupView({ group, allGroups, onToggleTodo, onDeleteTodo, onDelet
   const [settingsOpen, setSettingsOpen] = useState(false);
   const { dispatch, state } = useAppStore();
   const workspaceId = state.activeWorkspaceId ?? '';
+  const done = group.todos.filter(t => t.completed).length;
+  const total = group.todos.length;
+  const pct = total > 0 ? (done / total) * 100 : 0;
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* Group meta bar */}
       <div className="flex items-center gap-2 px-4 py-2 shrink-0">
-        <LayoutList size={14} className="text-muted-foreground" />
-        <span className="text-sm text-muted-foreground flex-1">
-          {group.todos.filter(t => t.completed).length}/{group.todos.length} done
-        </span>
+        <LayoutList size={13} className="text-white/30" />
+        <span className="text-xs text-white/40 font-medium flex-1">{done}/{total} done</span>
+
+        {/* Mini progress bar */}
+        {total > 0 && (
+          <div className="flex-1 max-w-[80px] h-1 rounded-full bg-white/10 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-primary to-orange-400 transition-all duration-500"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+        )}
+
         <button
           onClick={() => setSettingsOpen(true)}
-          className="flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted transition-colors"
+          className="flex items-center justify-center w-9 h-9 rounded-2xl text-white/25 hover:text-white hover:bg-white/8 transition-colors"
           aria-label="Group settings"
         >
-          <Settings size={15} />
+          <Settings size={14} />
         </button>
         <button
           onClick={onDeleteGroup}
-          className="flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors"
+          className="flex items-center justify-center w-9 h-9 rounded-2xl text-white/25 hover:text-red-400 hover:bg-red-400/10 transition-colors"
           aria-label="Delete group"
         >
-          <Trash2 size={15} />
+          <Trash2 size={14} />
         </button>
       </div>
 
@@ -249,16 +269,13 @@ function ActiveGroupView({ group, allGroups, onToggleTodo, onDeleteTodo, onDelet
       <div
         ref={setNodeRef}
         className={cn(
-          'flex-1 overflow-y-auto px-3 pb-2 min-h-0 no-scrollbar transition-colors rounded-lg',
+          'flex-1 overflow-y-auto px-3 pb-2 min-h-0 no-scrollbar transition-colors rounded-2xl',
           isOver && 'bg-primary/5',
         )}
       >
-        <SortableContext
-          items={group.todos.map(t => t.id)}
-          strategy={verticalListSortingStrategy}
-        >
+        <SortableContext items={group.todos.map(t => t.id)} strategy={verticalListSortingStrategy}>
           {group.todos.length === 0 && (
-            <div className="flex items-center justify-center h-32 text-sm text-muted-foreground/60">
+            <div className="flex items-center justify-center h-32 text-sm text-white/25">
               No todos yet — add one below
             </div>
           )}
@@ -276,7 +293,6 @@ function ActiveGroupView({ group, allGroups, onToggleTodo, onDeleteTodo, onDelet
         </SortableContext>
       </div>
 
-      {/* Group settings sheet */}
       {settingsOpen && (
         <GroupSettingsSheet
           group={group}
@@ -294,14 +310,14 @@ function ActiveGroupView({ group, allGroups, onToggleTodo, onDeleteTodo, onDelet
 
 function EmptyGroups({ onNewGroup }: { onNewGroup: () => void }) {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center gap-3 px-6">
-      <div className="rounded-full bg-muted p-4">
-        <LayoutList size={28} className="text-muted-foreground" />
+    <div className="flex flex-col flex-1 items-center justify-center gap-4 px-6">
+      <div className="rounded-full bg-white/8 p-5 border border-white/10">
+        <LayoutList size={28} className="text-white/30" />
       </div>
-      <p className="text-sm font-medium text-muted-foreground">No groups yet</p>
+      <p className="text-sm font-medium text-white/40">No groups yet</p>
       <button
         onClick={onNewGroup}
-        className="text-sm text-primary font-medium underline-offset-4 hover:underline"
+        className="text-sm text-primary font-semibold px-4 py-2 rounded-2xl bg-primary/10 hover:bg-primary/20 transition-colors active:scale-95"
       >
         Create your first group →
       </button>

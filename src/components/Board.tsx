@@ -15,22 +15,28 @@ interface Props {
 export function Board({ workspace, onAddTodo, onToggleTodo, onDeleteTodo, onDeleteGroup, onOpenTask }: Props) {
   if (workspace.groups.length === 0) {
     return (
-      <div className="flex flex-1 items-center justify-center">
-        <div className="text-center space-y-3">
+      <div
+        className="flex flex-1 items-center justify-center"
+        style={{ background: 'oklch(0.07 0.005 30)' }}
+      >
+        <div className="text-center space-y-4">
           <div className="flex justify-center">
-            <div className="rounded-full bg-muted p-4">
-              <Layers size={32} className="text-muted-foreground" />
+            <div className="rounded-3xl bg-white/6 border border-white/8 p-5">
+              <Layers size={32} className="text-white/25" />
             </div>
           </div>
-          <p className="text-sm font-medium text-muted-foreground">No groups yet</p>
-          <p className="text-xs text-muted-foreground/70">Click &ldquo;New Group&rdquo; to get started</p>
+          <p className="text-sm font-semibold text-white/40">No groups yet</p>
+          <p className="text-xs text-white/20">Click &ldquo;New Group&rdquo; to get started</p>
         </div>
       </div>
     );
   }
 
   return (
-    <ScrollArea className="flex-1 w-full">
+    <ScrollArea
+      className="flex-1 w-full"
+      style={{ background: 'oklch(0.07 0.005 30)' }}
+    >
       <div className="flex gap-4 p-4 h-full">
         {workspace.groups.map(group => (
           <GroupColumn

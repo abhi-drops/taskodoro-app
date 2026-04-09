@@ -1,7 +1,4 @@
-import { Plus, Trash2, CheckSquare, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
+import { Plus, Trash2, X, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Workspace } from '@/types/index';
 
@@ -29,70 +26,62 @@ export function Sidebar({
       {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-30 bg-black/40 md:hidden"
+          className="fixed inset-0 z-30 md:hidden"
+          style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)' }}
           onClick={onClose}
           aria-hidden
         />
       )}
 
-      {/* Sidebar panel */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex flex-col w-60 bg-card border-r border-border',
+          'fixed inset-y-0 left-0 z-40 flex flex-col w-60 border-r border-white/8',
           'transition-transform duration-200',
           'md:relative md:translate-x-0 md:z-auto',
           isOpen ? 'translate-x-0' : '-translate-x-full',
         )}
+        style={{ background: 'oklch(0.09 0.008 30)' }}
       >
         {/* Header */}
-        <div className="flex items-center gap-2 px-4 h-14 shrink-0">
-          <CheckSquare size={18} className="text-primary" />
-          <span className="font-bold text-base tracking-tight flex-1">Workspaces</span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 md:hidden"
+        <div className="flex items-center gap-2.5 px-4 h-14 shrink-0 border-b border-white/8">
+          <div className="w-7 h-7 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center shrink-0">
+            <Layers size={14} className="text-primary" />
+          </div>
+          <span className="font-bold text-sm text-white flex-1 tracking-tight">Workspaces</span>
+          <button
+            className="h-7 w-7 md:hidden flex items-center justify-center rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-colors"
             onClick={onClose}
             aria-label="Close sidebar"
           >
-            <X size={16} />
-          </Button>
+            <X size={14} />
+          </button>
         </div>
 
-        <Separator />
-
         {/* Workspace list */}
-        <ScrollArea className="flex-1 px-2 py-2">
-          <div className="space-y-0.5">
-            {workspaces.length === 0 && (
-              <p className="text-xs text-muted-foreground text-center py-6">
-                No workspaces yet
-              </p>
-            )}
-            {workspaces.map(ws => (
-              <WorkspaceItem
-                key={ws.id}
-                workspace={ws}
-                isActive={ws.id === activeWorkspaceId}
-                onSelect={() => { onSelectWorkspace(ws.id); onClose(); }}
-                onDelete={() => onDeleteWorkspace(ws.id)}
-              />
-            ))}
-          </div>
-        </ScrollArea>
+        <div className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
+          {workspaces.length === 0 && (
+            <p className="text-xs text-white/25 text-center py-8">No workspaces yet</p>
+          )}
+          {workspaces.map(ws => (
+            <WorkspaceItem
+              key={ws.id}
+              workspace={ws}
+              isActive={ws.id === activeWorkspaceId}
+              onSelect={() => { onSelectWorkspace(ws.id); onClose(); }}
+              onDelete={() => onDeleteWorkspace(ws.id)}
+            />
+          ))}
+        </div>
 
-        <Separator />
-
-        {/* New workspace button */}
-        <div className="p-2">
-          <Button
-            variant="ghost"
-            className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground"
+        {/* New workspace */}
+        <div className="p-2 border-t border-white/8">
+          <button
             onClick={onNewWorkspace}
+            className="w-full flex items-center gap-2 rounded-2xl px-3 py-2.5 text-sm font-semibold text-white/40 hover:text-white bg-white/5 hover:bg-white/10 border border-white/8 transition-colors"
           >
-            <Plus size={15} />
+            <Plus size={14} />
             New Workspace
-          </Button>
+          </button>
         </div>
       </aside>
     </>
@@ -114,13 +103,15 @@ function WorkspaceItem({ workspace, isActive, onSelect, onDelete }: WorkspaceIte
     }),
     { totalTodos: 0, completedTodos: 0 },
   );
+  const pct = totalTodos > 0 ? (completedTodos / totalTodos) * 100 : 0;
 
   return (
     <div
       className={cn(
-        'group flex items-center gap-2 rounded-md px-2 py-1.5 cursor-pointer',
-        'hover:bg-accent transition-colors',
-        isActive && 'bg-accent font-medium',
+        'group flex items-center gap-2 rounded-2xl px-3 py-2.5 cursor-pointer transition-all',
+        isActive
+          ? 'bg-primary/12 border border-primary/25'
+          : 'border border-transparent hover:bg-white/6 hover:border-white/8',
       )}
       onClick={onSelect}
       role="button"
@@ -128,17 +119,27 @@ function WorkspaceItem({ workspace, isActive, onSelect, onDelete }: WorkspaceIte
       onKeyDown={e => e.key === 'Enter' && onSelect()}
     >
       <div className="flex-1 min-w-0">
-        <p className="text-sm truncate">{workspace.name}</p>
+        <p className={cn('text-sm font-semibold truncate', isActive ? 'text-primary' : 'text-white/80')}>
+          {workspace.name}
+        </p>
         {totalTodos > 0 && (
-          <p className="text-[10px] text-muted-foreground">{completedTodos}/{totalTodos} done</p>
+          <div className="flex items-center gap-1.5 mt-1">
+            <div className="flex-1 h-1 rounded-full bg-white/10 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-primary to-orange-400 transition-all duration-500"
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <span className="text-[10px] text-white/25 font-medium shrink-0">{completedTodos}/{totalTodos}</span>
+          </div>
         )}
       </div>
       <button
         onClick={e => { e.stopPropagation(); onDelete(); }}
-        className="flex items-center justify-center w-8 h-8 rounded text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
+        className="flex items-center justify-center w-7 h-7 rounded-xl text-white/15 hover:text-red-400 hover:bg-red-400/10 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
         aria-label={`Delete workspace ${workspace.name}`}
       >
-        <Trash2 size={15} />
+        <Trash2 size={13} />
       </button>
     </div>
   );

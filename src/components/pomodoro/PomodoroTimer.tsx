@@ -27,35 +27,6 @@ function playAlarmLoop() {
   AlarmSound.start().catch(() => { /* ignore */ });
 }
 
-// SVG ring progress
-function TimerRing({ progress, type }: { progress: number; type: 'work' | 'break' }) {
-  const r = 88;
-  const circ = 2 * Math.PI * r;
-  const offset = circ * (1 - Math.max(0, Math.min(1, progress)));
-
-  return (
-    <svg viewBox="0 0 200 200" className="w-52 h-52 -rotate-90">
-      {/* Track */}
-      <circle cx="100" cy="100" r={r} fill="none" strokeWidth="10" className="stroke-muted" />
-      {/* Progress */}
-      <circle
-        cx="100"
-        cy="100"
-        r={r}
-        fill="none"
-        strokeWidth="10"
-        strokeLinecap="round"
-        strokeDasharray={circ}
-        strokeDashoffset={offset}
-        className={cn(
-          'transition-all duration-1000',
-          type === 'work' ? 'stroke-primary' : 'stroke-secondary',
-        )}
-      />
-    </svg>
-  );
-}
-
 export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dispatch }: Props) {
   const [blocks, setBlocks] = useState<PomodoroBlock[]>(initialBlocks);
   const [blockIdx, setBlockIdx] = useState(0);
@@ -71,6 +42,7 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
   const workBlocks = blocks.filter(b => b.type === 'work');
   const initialDuration = block ? block.durationMins * 60 : 1;
   const progress = timeLeft / initialDuration;
+  const isWork = block?.type === 'work';
 
   // Tick
   useEffect(() => {
@@ -94,7 +66,7 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
     };
   }, [isRunning, expired, blockIdx]);
 
-  // Alarm on expiry — loop until dismissed
+  // Alarm on expiry
   useEffect(() => {
     if (expired && !alarmFiredRef.current) {
       alarmFiredRef.current = true;
@@ -102,12 +74,10 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
     }
   }, [expired]);
 
-  // Stop alarm whenever expired clears
   useEffect(() => {
     if (!expired) stopAlarm();
   }, [expired]);
 
-  // Reset alarm flag when moving to new block
   useEffect(() => {
     alarmFiredRef.current = false;
   }, [blockIdx]);
@@ -161,9 +131,7 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
     }
   }
 
-  // Next button pressed during active/paused state
   function handleNextPress() {
-    // If it's a work block that isn't checked off, ask
     if (block?.type === 'work' && !block.completed) {
       setShowNextConfirm(true);
     } else {
@@ -193,176 +161,242 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
 
   if (!block) return null;
 
+  // Progress bar width %
+  const progressPct = Math.max(0, Math.min(100, progress * 100));
+
   return (
-    <div className="fixed inset-0 z-50 bg-background flex flex-col overflow-hidden" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+    <div
+      className="fixed inset-0 z-50 flex flex-col overflow-hidden"
+      style={{
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+        background: isWork
+          ? 'linear-gradient(160deg, oklch(0.14 0.03 30) 0%, oklch(0.08 0.01 30) 100%)'
+          : 'linear-gradient(160deg, oklch(0.14 0.03 90) 0%, oklch(0.08 0.01 90) 100%)',
+      }}
+    >
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-3 shrink-0">
         <button
           onClick={() => { stopAlarm(); onClose(); }}
-          className="w-10 h-10 flex items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white/10 text-white/60 hover:text-white hover:bg-white/20 transition-colors"
           aria-label="Close timer"
         >
-          <X size={20} />
+          <X size={18} />
         </button>
+
+        {/* Block dots */}
         <div className="flex items-center gap-1.5">
-          <span className={cn(
-            'text-xs font-semibold px-2.5 py-1 rounded-full',
-            block.type === 'work' ? 'bg-primary/10 text-primary' : 'bg-secondary text-secondary-foreground',
-          )}>
-            {block.type === 'work' ? (
-              <span className="flex items-center gap-1"><Zap size={11} />Work</span>
-            ) : (
-              <span className="flex items-center gap-1"><Coffee size={11} />Break</span>
-            )}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            {blockIdx + 1} / {totalBlocks}
-          </span>
+          {blocks.map((b, i) => (
+            <button
+              key={b.id}
+              onClick={() => goToBlock(i)}
+              className={cn(
+                'rounded-full transition-all duration-300',
+                i === blockIdx
+                  ? 'w-6 h-2.5 bg-white'
+                  : b.completed
+                  ? 'w-2.5 h-2.5 bg-white/40'
+                  : 'w-2.5 h-2.5 bg-white/15',
+              )}
+            />
+          ))}
         </div>
+
         <button
           onClick={handleRestart}
-          className="w-10 h-10 flex items-center justify-center rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white/10 text-white/60 hover:text-white hover:bg-white/20 transition-colors"
           aria-label="Restart session"
         >
-          <RotateCcw size={18} />
+          <RotateCcw size={16} />
         </button>
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-6 px-6 min-h-0">
-        {/* Task label */}
-        <div className="text-center max-w-xs">
-          <h2 className="text-xl font-bold leading-tight line-clamp-2">{block.label}</h2>
-          {block.type === 'break' && (
-            <p className="text-sm text-muted-foreground mt-1">Take a breather</p>
-          )}
+      <div className="flex-1 flex flex-col items-center justify-center gap-8 px-6 min-h-0">
+
+        {/* Mode badge */}
+        <div className={cn(
+          'flex items-center gap-2 px-5 py-2 rounded-full text-sm font-bold uppercase tracking-widest',
+          isWork
+            ? 'bg-primary text-white'
+            : 'bg-secondary text-secondary-foreground',
+        )}>
+          {isWork ? <Zap size={14} /> : <Coffee size={14} />}
+          {isWork ? 'Work Session' : 'Break Time'}
         </div>
 
-        {/* Ring + time */}
-        <div className="relative flex items-center justify-center">
-          <TimerRing progress={progress} type={block.type} />
-          <div className="absolute flex flex-col items-center">
-            <span className={cn(
-              'text-5xl font-mono font-bold tabular-nums tracking-tight',
-              expired && 'animate-pulse',
-            )}>
-              {formatTime(timeLeft)}
+        {/* Time display */}
+        <div className="flex flex-col items-center gap-3">
+          <span className={cn(
+            'font-mono font-black tracking-tighter text-white leading-none',
+            expired && 'animate-pulse',
+          )}
+          style={{ fontSize: 'clamp(4rem, 22vw, 7rem)' }}
+          >
+            {formatTime(timeLeft)}
+          </span>
+          <p className="text-white/50 text-sm font-medium text-center line-clamp-1 max-w-[220px]">
+            {block.label}
+          </p>
+        </div>
+
+        {/* Progress bar */}
+        <div className="w-full max-w-xs">
+          <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+            <div
+              className={cn(
+                'h-full rounded-full transition-all duration-1000',
+                isWork
+                  ? 'bg-gradient-to-r from-primary to-orange-400'
+                  : 'bg-gradient-to-r from-secondary to-yellow-300',
+              )}
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
+          <div className="flex justify-between mt-1.5">
+            <span className="text-xs text-white/30 font-mono">
+              {Math.round((1 - progress) * block.durationMins)}m elapsed
+            </span>
+            <span className="text-xs text-white/30 font-mono">
+              {blockIdx + 1}/{totalBlocks}
             </span>
           </div>
         </div>
 
         {/* Controls */}
         <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="icon"
+          <button
             onClick={() => setIsRunning(r => !r)}
             disabled={expired}
-            className="w-14 h-14 rounded-2xl"
+            className={cn(
+              'w-16 h-16 rounded-2xl flex items-center justify-center transition-all',
+              isWork
+                ? 'bg-primary text-white shadow-lg shadow-primary/40 active:scale-95'
+                : 'bg-secondary text-secondary-foreground shadow-lg shadow-secondary/40 active:scale-95',
+              expired && 'opacity-40',
+            )}
             aria-label={isRunning ? 'Pause' : 'Resume'}
           >
-            {isRunning ? <Pause size={22} /> : <Play size={22} />}
-          </Button>
-          <Button
-            variant="outline"
+            {isRunning ? <Pause size={24} /> : <Play size={24} />}
+          </button>
+
+          <button
             onClick={handleAddFive}
-            className="h-14 px-5 rounded-2xl gap-2 text-sm font-semibold"
+            className="h-14 px-5 rounded-2xl bg-white/10 text-white font-semibold text-sm flex items-center gap-2 hover:bg-white/20 transition-colors active:scale-95"
           >
             <Plus size={16} />
             5 min
-          </Button>
-          <Button
-            variant="outline"
+          </button>
+
+          <button
             onClick={handleNextPress}
-            className="h-14 px-5 rounded-2xl gap-2 text-sm font-semibold"
+            className="h-14 px-5 rounded-2xl bg-white/10 text-white font-semibold text-sm flex items-center gap-2 hover:bg-white/20 transition-colors active:scale-95"
             aria-label="Next block"
           >
             <SkipForward size={16} />
             Next
-          </Button>
+          </button>
         </div>
       </div>
 
-      {/* Next confirm overlay — asks to check off work task */}
+      {/* Next confirm overlay */}
       {showNextConfirm && (
-        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm px-6 gap-5">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center px-6 gap-5"
+          style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)' }}>
+          <div className="w-16 h-16 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center">
             <Check size={28} className="text-primary" />
           </div>
           <div className="text-center">
-            <h3 className="text-xl font-bold">Mark as done?</h3>
-            <p className="text-muted-foreground text-sm mt-1 max-w-[260px]">
-              "{block.label}" isn't checked off yet. Do you want to complete it before moving on?
+            <h3 className="text-xl font-bold text-white">Mark as done?</h3>
+            <p className="text-white/50 text-sm mt-1 max-w-[260px]">
+              "{block.label}" isn't checked off yet. Complete it before moving on?
             </p>
           </div>
           <div className="flex flex-col gap-2.5 w-full max-w-xs">
-            <Button onClick={handleCheckOffAndNext} className="h-12 gap-2 rounded-xl font-semibold">
+            <button
+              onClick={handleCheckOffAndNext}
+              className="h-12 rounded-xl bg-primary text-white font-semibold flex items-center justify-center gap-2 active:scale-95 transition-all"
+            >
               <Check size={16} />
-              Check off & continue
-            </Button>
-            <Button
+              Check off &amp; continue
+            </button>
+            <button
               onClick={() => { setShowNextConfirm(false); handleNext(); }}
-              variant="outline"
-              className="h-12 gap-2 rounded-xl"
+              className="h-12 rounded-xl bg-white/10 text-white font-medium flex items-center justify-center gap-2 hover:bg-white/20 transition-colors active:scale-95"
             >
               <SkipForward size={16} />
-              Skip & continue
-            </Button>
-            <Button
+              Skip &amp; continue
+            </button>
+            <button
               onClick={() => setShowNextConfirm(false)}
-              variant="ghost"
-              className="h-11 text-muted-foreground rounded-xl"
+              className="h-11 rounded-xl text-white/40 font-medium hover:text-white/60 transition-colors"
             >
               Cancel
-            </Button>
+            </button>
           </div>
         </div>
       )}
 
       {/* Time's Up overlay */}
       {expired && !showNextConfirm && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-background/95 backdrop-blur-sm px-6 gap-5">
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center px-6 gap-5"
+          style={{ background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)' }}>
           <div className={cn(
-            'w-20 h-20 rounded-full flex items-center justify-center',
-            block.type === 'work' ? 'bg-primary/10' : 'bg-secondary',
+            'w-20 h-20 rounded-full flex items-center justify-center border-2',
+            isWork ? 'bg-primary/20 border-primary/50' : 'bg-secondary/20 border-secondary/50',
           )}>
             <span className="text-4xl">⏰</span>
           </div>
           <div className="text-center">
-            <h3 className="text-2xl font-bold">Time's Up!</h3>
-            <p className="text-muted-foreground text-sm mt-1 max-w-[240px]">
-              {block.type === 'work' ? `Finished: ${block.label}` : 'Break over!'}
+            <h3 className="text-3xl font-black text-white">Time's Up!</h3>
+            <p className="text-white/50 text-sm mt-1 max-w-[240px]">
+              {isWork ? `Finished: ${block.label}` : 'Break over — back to it!'}
             </p>
           </div>
           <div className="flex flex-col gap-2.5 w-full max-w-xs">
-            <Button onClick={handleAddFive} variant="outline" className="h-12 gap-2 rounded-xl">
+            <button
+              onClick={handleAddFive}
+              className="h-12 rounded-xl bg-white/10 text-white font-medium flex items-center justify-center gap-2 hover:bg-white/20 transition-colors active:scale-95"
+            >
               <Plus size={16} />
               Add 5 minutes
-            </Button>
-            {block.type === 'work' && (
-              <Button onClick={handleCheckOffAndNext} className="h-12 gap-2 rounded-xl font-semibold">
+            </button>
+            {isWork && (
+              <button
+                onClick={handleCheckOffAndNext}
+                className="h-12 rounded-xl bg-primary text-white font-semibold flex items-center justify-center gap-2 active:scale-95 transition-all"
+              >
                 <Check size={16} />
-                Check off & continue
-              </Button>
+                Check off &amp; continue
+              </button>
             )}
-            <Button
+            <button
               onClick={handleNext}
-              variant={block.type === 'break' ? 'default' : 'outline'}
-              className="h-12 gap-2 rounded-xl"
+              className={cn(
+                'h-12 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all active:scale-95',
+                !isWork ? 'bg-secondary text-secondary-foreground' : 'bg-white/10 text-white hover:bg-white/20',
+              )}
             >
               {blockIdx + 1 < blocks.length ? 'Next block →' : 'Finish session'}
-            </Button>
-            <Button onClick={onClose} variant="ghost" className="h-11 text-muted-foreground rounded-xl">
+            </button>
+            <button
+              onClick={onClose}
+              className="h-11 rounded-xl text-white/40 font-medium hover:text-white/60 transition-colors"
+            >
               Close timer
-            </Button>
+            </button>
           </div>
         </div>
       )}
 
       {/* Task checklist */}
       {workBlocks.length > 0 && !expired && !showNextConfirm && (
-        <div className="shrink-0 border-t border-border px-4 pt-3 pb-4" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 1rem)' }}>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Tasks</p>
+        <div
+          className="shrink-0 border-t border-white/10 px-4 pt-3"
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 1rem)' }}
+        >
+          <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-2">Tasks</p>
           <div className="flex flex-col gap-1.5 max-h-32 overflow-y-auto no-scrollbar">
             {blocks
               .filter(b => b.type === 'work')
@@ -374,30 +408,29 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
                     onClick={() => handleChecklistToggle(b)}
                     className={cn(
                       'flex items-center gap-2.5 w-full text-left px-3 py-2 rounded-xl transition-colors text-sm',
-                      isActive ? 'bg-primary/10' : 'hover:bg-muted',
+                      isActive ? 'bg-white/10' : 'hover:bg-white/5',
                     )}
                   >
                     <span
                       className={cn(
                         'w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors',
-                        b.completed ? 'border-primary bg-primary' : 'border-border',
+                        b.completed ? 'border-primary bg-primary' : 'border-white/20',
                       )}
                     >
                       {b.completed && (
-                        <svg viewBox="0 0 10 8" className="w-3 h-3 text-primary-foreground fill-current">
+                        <svg viewBox="0 0 10 8" className="w-3 h-3 text-white fill-current">
                           <path d="M1 4l3 3 5-6" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       )}
                     </span>
                     <span className={cn(
-                      'flex-1 truncate font-medium',
-                      b.completed && 'line-through text-muted-foreground',
-                      isActive && 'text-primary',
+                      'flex-1 truncate font-medium text-white',
+                      b.completed && 'line-through text-white/30',
                     )}>
                       {b.label}
                     </span>
                     {isActive && (
-                      <span className="text-xs bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full font-semibold shrink-0">
+                      <span className="text-xs bg-primary text-white px-1.5 py-0.5 rounded-full font-bold shrink-0">
                         Now
                       </span>
                     )}

@@ -27,7 +27,8 @@ export function GroupSettingsSheet({ group, allGroups, workspaceId, onClose, dis
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+        className="fixed inset-0 z-40"
+        style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}
         onClick={onClose}
         aria-hidden="true"
       />
@@ -37,54 +38,58 @@ export function GroupSettingsSheet({ group, allGroups, workspaceId, onClose, dis
         role="dialog"
         aria-modal="true"
         aria-labelledby="group-settings-title"
-        className="fixed inset-x-0 bottom-0 z-50 rounded-t-2xl bg-card border-t border-border shadow-xl animate-slide-up"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+        className="fixed inset-x-0 bottom-0 z-50 rounded-t-3xl border-t border-white/10 shadow-2xl"
+        style={{
+          background: 'oklch(0.1 0.008 30)',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        }}
       >
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
+          <div className="w-10 h-1 rounded-full bg-white/20" />
         </div>
 
         {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
-          <Settings size={18} className="text-muted-foreground shrink-0" />
-          <h2 id="group-settings-title" className="font-semibold text-base flex-1 truncate">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-white/8">
+          <div className="w-8 h-8 rounded-2xl bg-white/8 border border-white/10 flex items-center justify-center shrink-0">
+            <Settings size={15} className="text-white/50" />
+          </div>
+          <h2 id="group-settings-title" className="font-bold text-base text-white flex-1 truncate">
             {group.name}
           </h2>
           <button
             onClick={onClose}
-            className="flex items-center justify-center w-9 h-9 rounded-lg text-muted-foreground hover:bg-muted transition-colors"
+            className="flex items-center justify-center w-9 h-9 rounded-2xl bg-white/8 text-white/40 hover:text-white hover:bg-white/15 transition-colors"
             aria-label="Close settings"
           >
-            <X size={18} />
+            <X size={16} />
           </button>
         </div>
 
         {/* Settings body */}
-        <div className="px-4 py-4 space-y-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
+        <div className="px-4 py-5 space-y-3">
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-white/30 uppercase tracking-widest">
               On complete, move task to
             </label>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-white/30">
               When a task is checked, automatically send it to another group.
             </p>
-            <select
-              value={currentTarget}
-              onChange={e => handleMoveTargetChange(e.target.value)}
-              className="w-full h-11 rounded-xl border border-border bg-background px-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"
-            >
-              <option value="">None</option>
-              {otherGroups.map(g => (
-                <option key={g.id} value={g.id}>{g.name}</option>
-              ))}
-            </select>
-            {otherGroups.length === 0 && (
-              <p className="text-xs text-muted-foreground italic">
-                No other groups in this workspace.
-              </p>
-            )}
           </div>
+          <select
+            value={currentTarget}
+            onChange={e => handleMoveTargetChange(e.target.value)}
+            className="w-full h-12 rounded-2xl border border-white/10 bg-white/6 px-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary/40"
+            style={{ colorScheme: 'dark' }}
+          >
+            <option value="">None</option>
+            {otherGroups.map(g => (
+              <option key={g.id} value={g.id}>{g.name}</option>
+            ))}
+          </select>
+          {otherGroups.length === 0 && (
+            <p className="text-xs text-white/20 italic">No other groups in this workspace.</p>
+          )}
         </div>
       </div>
     </>

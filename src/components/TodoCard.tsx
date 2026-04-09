@@ -1,15 +1,21 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, X, Clock, ChevronRight } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { Todo, TaskPriority } from '@/types/index';
 
-const PRIORITY_DOT: Record<TaskPriority, string> = {
-  low:    'bg-muted-foreground/40',
-  medium: 'bg-blue-500',
-  high:   'bg-amber-500',
+const PRIORITY_BAR: Record<TaskPriority, string> = {
+  low:    'bg-white/20',
+  medium: 'bg-blue-400',
+  high:   'bg-amber-400',
   urgent: 'bg-red-500',
+};
+
+const PRIORITY_LABEL: Record<TaskPriority, string> = {
+  low:    'text-white/30',
+  medium: 'text-blue-400',
+  high:   'text-amber-400',
+  urgent: 'text-red-400',
 };
 
 function EndTimeBadge({ endTime }: { endTime: number }) {
@@ -33,12 +39,12 @@ function EndTimeBadge({ endTime }: { endTime: number }) {
 
   return (
     <span className={cn(
-      'flex items-center gap-0.5 text-[10px] font-medium rounded px-1 py-0.5 shrink-0',
+      'flex items-center gap-0.5 text-[10px] font-semibold rounded-full px-2 py-0.5 shrink-0',
       isOverdue
-        ? 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30'
+        ? 'text-red-400 bg-red-400/15'
         : diff < 3600000
-          ? 'text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-900/30'
-          : 'text-muted-foreground bg-muted',
+          ? 'text-amber-400 bg-amber-400/15'
+          : 'text-white/40 bg-white/8',
     )}>
       <Clock size={9} />
       {label}
@@ -66,10 +72,7 @@ export function TodoCard({ todo, onToggle, onDelete, onOpen, isDragOverlay = fal
 
   const style = isDragOverlay
     ? {}
-    : {
-        transform: CSS.Transform.toString(transform),
-        transition,
-      };
+    : { transform: CSS.Transform.toString(transform), transition };
 
   const colorBorderStyle = todo.color
     ? { borderLeftColor: todo.color, borderLeftWidth: '3px' }
@@ -80,58 +83,71 @@ export function TodoCard({ todo, onToggle, onDelete, onOpen, isDragOverlay = fal
       ref={isDragOverlay ? undefined : setNodeRef}
       style={{ ...style, ...colorBorderStyle }}
       className={cn(
-        'group flex items-center gap-2 rounded-lg border border-border bg-card px-2 py-3 shadow-sm',
-        isDragging && !isDragOverlay && 'opacity-40',
-        isDragOverlay && 'shadow-xl rotate-1 cursor-grabbing',
-        'transition-shadow hover:shadow-md',
+        'group flex items-center gap-2 rounded-2xl border bg-white/6 border-white/8 px-2 py-3',
+        isDragging && !isDragOverlay && 'opacity-30',
+        isDragOverlay && 'shadow-2xl rotate-1 cursor-grabbing border-primary/30 bg-primary/10',
+        'transition-colors hover:bg-white/10',
       )}
     >
       {/* Drag handle */}
       <button
         {...(isDragOverlay ? {} : { ...attributes, ...listeners })}
-        className="flex items-center justify-center w-8 h-8 cursor-grab touch-none text-muted-foreground/40 hover:text-muted-foreground active:cursor-grabbing shrink-0 rounded"
+        className="flex items-center justify-center w-8 h-8 cursor-grab touch-none text-white/15 hover:text-white/40 active:cursor-grabbing shrink-0 rounded-xl"
         aria-label="Drag to reorder"
         tabIndex={-1}
       >
-        <GripVertical size={18} />
+        <GripVertical size={16} />
       </button>
 
       {/* Priority dot */}
       {todo.priority && (
-        <span className={cn('w-2 h-2 rounded-full shrink-0', PRIORITY_DOT[todo.priority])} />
+        <span className={cn('w-1.5 h-5 rounded-full shrink-0', PRIORITY_BAR[todo.priority])} />
       )}
 
       {/* SN badge */}
-      <Badge variant="outline" className="shrink-0 text-xs font-mono px-1.5 py-0 h-5 text-muted-foreground">
+      <span className="shrink-0 text-[10px] font-mono font-bold text-white/20 bg-white/6 border border-white/8 rounded-md px-1.5 py-0.5">
         #{todo.sn}
-      </Badge>
+      </span>
 
       {/* Checkbox */}
-      <input
-        type="checkbox"
-        checked={todo.completed}
-        onChange={onToggle}
-        className="shrink-0 accent-primary cursor-pointer w-5 h-5"
+      <button
+        onClick={onToggle}
+        className={cn(
+          'shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all active:scale-90',
+          todo.completed
+            ? 'border-primary bg-primary'
+            : 'border-white/20 hover:border-white/50',
+        )}
         aria-label={`Mark "${todo.text}" as ${todo.completed ? 'incomplete' : 'complete'}`}
-      />
+      >
+        {todo.completed && (
+          <svg viewBox="0 0 10 8" className="w-3 h-3 text-white fill-current">
+            <path d="M1 4l3 3 5-6" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
+      </button>
 
-      {/* Text + badges — tappable to open details */}
+      {/* Text + badges */}
       <button
         onClick={onOpen}
         disabled={!onOpen}
         className="flex-1 flex items-center gap-1.5 min-w-0 text-left disabled:cursor-default"
       >
-        <span className={cn('flex-1 text-sm leading-snug truncate', todo.completed && 'line-through text-muted-foreground')}>
+        <span className={cn(
+          'flex-1 text-sm leading-snug truncate font-medium',
+          todo.completed ? 'line-through text-white/25' : 'text-white',
+          todo.priority && PRIORITY_LABEL[todo.priority] && !todo.completed && 'opacity-90',
+        )}>
           {todo.text}
         </span>
         {todo.endTime && <EndTimeBadge endTime={todo.endTime} />}
       </button>
 
-      {/* Open details icon (desktop subtle cue) */}
+      {/* Open details */}
       {onOpen && (
         <button
           onClick={onOpen}
-          className="shrink-0 flex items-center justify-center w-7 h-7 rounded text-muted-foreground/30 hover:text-muted-foreground hover:bg-muted transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
+          className="shrink-0 flex items-center justify-center w-8 h-8 rounded-xl text-white/15 hover:text-white/60 hover:bg-white/8 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
           aria-label="Open task details"
         >
           <ChevronRight size={14} />
@@ -141,10 +157,10 @@ export function TodoCard({ todo, onToggle, onDelete, onOpen, isDragOverlay = fal
       {/* Delete */}
       <button
         onClick={onDelete}
-        className="shrink-0 flex items-center justify-center w-8 h-8 rounded text-muted-foreground/50 hover:text-destructive hover:bg-destructive/10 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
+        className="shrink-0 flex items-center justify-center w-8 h-8 rounded-xl text-white/15 hover:text-red-400 hover:bg-red-400/10 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
         aria-label="Delete todo"
       >
-        <X size={15} />
+        <X size={14} />
       </button>
     </div>
   );

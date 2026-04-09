@@ -1,8 +1,6 @@
 import { useState, useMemo } from 'react';
-import { X, Search, ChevronUp, ChevronDown, Trash2, Plus, ArrowLeft, Timer } from 'lucide-react';
+import { X, Search, ChevronUp, ChevronDown, Trash2, Plus, ArrowLeft, Timer, Zap, Coffee } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import type { Workspace, Todo } from '@/types/index';
 import type { PomodoroBlock } from '@/types/pomodoro';
 
@@ -21,11 +19,7 @@ interface Props {
 const WORK_OPTIONS = [10, 15, 20, 25, 30, 45];
 const BREAK_OPTIONS = [5, 10, 15];
 
-function generatePlan(
-  tasks: SelectedTask[],
-  workMins: number,
-  breakMins: number,
-): PomodoroBlock[] {
+function generatePlan(tasks: SelectedTask[], workMins: number, breakMins: number): PomodoroBlock[] {
   const blocks: PomodoroBlock[] = [];
   tasks.forEach((t, i) => {
     blocks.push({
@@ -50,7 +44,7 @@ function generatePlan(
   return blocks;
 }
 
-// ─── Step 1: Task Selector ────────────────────────────────────────────────────
+// ─── Step 1 ───────────────────────────────────────────────────────────────────
 
 interface Step1Props {
   workspace: Workspace;
@@ -63,16 +57,7 @@ interface Step1Props {
   onGenerate: () => void;
 }
 
-function Step1({
-  workspace,
-  selected,
-  workMins,
-  breakMins,
-  onToggleTask,
-  onSetWork,
-  onSetBreak,
-  onGenerate,
-}: Step1Props) {
+function Step1({ workspace, selected, workMins, breakMins, onToggleTask, onSetWork, onSetBreak, onGenerate }: Step1Props) {
   const [query, setQuery] = useState('');
 
   const allTasks = useMemo(() => {
@@ -101,27 +86,25 @@ function Step1({
     <div className="flex flex-col flex-1 min-h-0 gap-4 p-4">
       {/* Search */}
       <div className="relative">
-        <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-        <Input
+        <Search size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
+        <input
           value={query}
           onChange={e => setQuery(e.target.value)}
           placeholder="Search tasks…"
-          className="pl-9 h-10"
           autoFocus
+          className="w-full h-11 rounded-2xl bg-white/8 border border-white/10 text-white text-sm pl-10 pr-4 placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-primary/40 focus:bg-white/12 transition-all"
         />
       </div>
 
       {/* Task list */}
       <div className="flex-1 overflow-y-auto min-h-0 -mx-4 px-4">
         {grouped.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-8">No tasks found</p>
+          <p className="text-sm text-white/30 text-center py-8">No tasks found</p>
         ) : (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-4">
             {grouped.map(({ groupName, tasks }) => (
               <div key={groupName}>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 px-1">
-                  {groupName}
-                </p>
+                <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-2 px-1">{groupName}</p>
                 <div className="flex flex-col gap-1">
                   {tasks.map(t => {
                     const active = isSelected(t.todo.id);
@@ -130,25 +113,27 @@ function Step1({
                         key={t.todo.id}
                         onClick={() => onToggleTask(t)}
                         className={cn(
-                          'flex items-center gap-3 w-full text-left px-3 py-2.5 rounded-xl transition-colors text-sm',
+                          'flex items-center gap-3 w-full text-left px-3 py-3 rounded-2xl transition-all text-sm active:scale-[0.98]',
                           active
-                            ? 'bg-primary/10 text-foreground'
-                            : 'hover:bg-muted text-foreground',
+                            ? 'bg-primary/15 border border-primary/30'
+                            : 'bg-white/5 border border-white/8 hover:bg-white/10',
                         )}
                       >
-                        <span
-                          className={cn(
-                            'w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors',
-                            active ? 'border-primary bg-primary' : 'border-border',
-                          )}
-                        >
+                        <span className={cn(
+                          'w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors',
+                          active ? 'border-primary bg-primary' : 'border-white/20',
+                        )}>
                           {active && (
-                            <svg viewBox="0 0 10 8" className="w-3 h-3 text-primary-foreground fill-current">
+                            <svg viewBox="0 0 10 8" className="w-3 h-3 text-white fill-current">
                               <path d="M1 4l3 3 5-6" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
                             </svg>
                           )}
                         </span>
-                        <span className={cn('flex-1 truncate', t.todo.completed && 'line-through text-muted-foreground')}>
+                        <span className={cn(
+                          'flex-1 truncate font-medium',
+                          active ? 'text-white' : 'text-white/70',
+                          t.todo.completed && 'line-through text-white/25',
+                        )}>
                           {t.todo.text}
                         </span>
                       </button>
@@ -165,12 +150,9 @@ function Step1({
       {selected.length > 0 && (
         <div className="flex flex-wrap gap-1.5 pt-1">
           {selected.map(s => (
-            <span
-              key={s.todo.id}
-              className="flex items-center gap-1 bg-primary/10 text-primary text-xs font-medium px-2.5 py-1 rounded-full max-w-[180px]"
-            >
+            <span key={s.todo.id} className="flex items-center gap-1 bg-primary/15 border border-primary/30 text-primary text-xs font-semibold px-2.5 py-1 rounded-full max-w-[180px]">
               <span className="truncate">{s.todo.text}</span>
-              <button onClick={() => onToggleTask(s)} className="shrink-0 hover:text-destructive">
+              <button onClick={() => onToggleTask(s)} className="shrink-0 hover:text-red-400">
                 <X size={11} />
               </button>
             </span>
@@ -179,56 +161,64 @@ function Step1({
       )}
 
       {/* Duration selectors */}
-      <div className="grid grid-cols-2 gap-3 pt-1">
+      <div className="grid grid-cols-2 gap-3">
         <div>
-          <p className="text-xs text-muted-foreground mb-1.5 font-medium">Work (mins)</p>
+          <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+            <Zap size={11} /> Work
+          </p>
           <div className="flex flex-wrap gap-1.5">
             {WORK_OPTIONS.map(m => (
               <button
                 key={m}
                 onClick={() => onSetWork(m)}
                 className={cn(
-                  'px-2.5 py-1 rounded-lg text-sm font-medium transition-colors',
-                  workMins === m ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground',
+                  'px-2.5 py-1.5 rounded-xl text-sm font-semibold transition-all active:scale-95',
+                  workMins === m
+                    ? 'bg-primary text-white shadow-md shadow-primary/30'
+                    : 'bg-white/8 text-white/40 hover:text-white hover:bg-white/15',
                 )}
               >
-                {m}
+                {m}m
               </button>
             ))}
           </div>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground mb-1.5 font-medium">Break (mins)</p>
+          <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+            <Coffee size={11} /> Break
+          </p>
           <div className="flex flex-wrap gap-1.5">
             {BREAK_OPTIONS.map(m => (
               <button
                 key={m}
                 onClick={() => onSetBreak(m)}
                 className={cn(
-                  'px-2.5 py-1 rounded-lg text-sm font-medium transition-colors',
-                  breakMins === m ? 'bg-secondary text-secondary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground',
+                  'px-2.5 py-1.5 rounded-xl text-sm font-semibold transition-all active:scale-95',
+                  breakMins === m
+                    ? 'bg-secondary text-secondary-foreground shadow-md'
+                    : 'bg-white/8 text-white/40 hover:text-white hover:bg-white/15',
                 )}
               >
-                {m}
+                {m}m
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      <Button
+      <button
         onClick={onGenerate}
         disabled={selected.length === 0}
-        className="w-full h-11 text-sm font-semibold gap-2"
+        className="w-full h-12 rounded-2xl bg-primary text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-30 active:scale-[0.98] transition-all shadow-lg shadow-primary/30"
       >
         <Timer size={16} />
         Generate Plan ({selected.length} task{selected.length !== 1 ? 's' : ''})
-      </Button>
+      </button>
     </div>
   );
 }
 
-// ─── Step 2: Plan Editor ──────────────────────────────────────────────────────
+// ─── Step 2 ───────────────────────────────────────────────────────────────────
 
 interface Step2Props {
   blocks: PomodoroBlock[];
@@ -263,24 +253,21 @@ function Step2({ blocks, onChange, onBack, onStart }: Step2Props) {
   }
 
   function addBlock() {
-    onChange([
-      ...blocks,
-      {
-        id: crypto.randomUUID(),
-        type: 'work',
-        label: 'New task',
-        durationMins: 25,
-        completed: false,
-      },
-    ]);
+    onChange([...blocks, {
+      id: crypto.randomUUID(),
+      type: 'work',
+      label: 'New task',
+      durationMins: 25,
+      completed: false,
+    }]);
   }
 
   return (
     <div className="flex flex-col flex-1 min-h-0 gap-3 p-4">
       {/* Summary */}
-      <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span>{blocks.length} blocks</span>
-        <span>{totalMins} min total</span>
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-bold text-white/30 uppercase tracking-widest">{blocks.length} blocks</span>
+        <span className="text-xs font-bold text-white/30 uppercase tracking-widest">{totalMins}m total</span>
       </div>
 
       {/* Block list */}
@@ -289,8 +276,10 @@ function Step2({ blocks, onChange, onBack, onStart }: Step2Props) {
           <div
             key={block.id}
             className={cn(
-              'flex items-center gap-2 p-2.5 rounded-xl border',
-              block.type === 'work' ? 'border-primary/20 bg-primary/5' : 'border-secondary/30 bg-secondary/10',
+              'flex items-center gap-2 p-3 rounded-2xl border',
+              block.type === 'work'
+                ? 'border-primary/20 bg-primary/8'
+                : 'border-secondary/20 bg-secondary/8',
             )}
           >
             {/* Up/Down */}
@@ -298,16 +287,16 @@ function Step2({ blocks, onChange, onBack, onStart }: Step2Props) {
               <button
                 onClick={() => moveUp(idx)}
                 disabled={idx === 0}
-                className="p-0.5 rounded text-muted-foreground hover:text-foreground disabled:opacity-30"
+                className="p-0.5 rounded-lg text-white/25 hover:text-white disabled:opacity-20"
               >
-                <ChevronUp size={14} />
+                <ChevronUp size={13} />
               </button>
               <button
                 onClick={() => moveDown(idx)}
                 disabled={idx === blocks.length - 1}
-                className="p-0.5 rounded text-muted-foreground hover:text-foreground disabled:opacity-30"
+                className="p-0.5 rounded-lg text-white/25 hover:text-white disabled:opacity-20"
               >
-                <ChevronDown size={14} />
+                <ChevronDown size={13} />
               </button>
             </div>
 
@@ -315,20 +304,20 @@ function Step2({ blocks, onChange, onBack, onStart }: Step2Props) {
             <button
               onClick={() => update(block.id, { type: block.type === 'work' ? 'break' : 'work' })}
               className={cn(
-                'shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full transition-colors',
+                'shrink-0 text-xs font-bold px-2.5 py-1 rounded-full transition-colors flex items-center gap-1',
                 block.type === 'work'
-                  ? 'bg-primary/15 text-primary'
-                  : 'bg-secondary text-secondary-foreground',
+                  ? 'bg-primary/20 text-primary'
+                  : 'bg-secondary/30 text-secondary-foreground',
               )}
             >
-              {block.type === 'work' ? 'Work' : 'Break'}
+              {block.type === 'work' ? <><Zap size={10} />Work</> : <><Coffee size={10} />Break</>}
             </button>
 
             {/* Label */}
             <input
               value={block.label}
               onChange={e => update(block.id, { label: e.target.value })}
-              className="flex-1 min-w-0 bg-transparent text-sm outline-none text-foreground placeholder:text-muted-foreground"
+              className="flex-1 min-w-0 bg-transparent text-sm text-white outline-none placeholder:text-white/25"
               placeholder="Label…"
             />
 
@@ -340,25 +329,24 @@ function Step2({ blocks, onChange, onBack, onStart }: Step2Props) {
                 max={120}
                 value={block.durationMins}
                 onChange={e => update(block.id, { durationMins: Math.max(1, Number(e.target.value)) })}
-                className="w-9 bg-transparent text-sm text-center outline-none text-foreground"
+                className="w-9 bg-transparent text-sm text-center text-white outline-none"
               />
-              <span className="text-xs text-muted-foreground">m</span>
+              <span className="text-xs text-white/30">m</span>
             </div>
 
             {/* Delete */}
             <button
               onClick={() => remove(block.id)}
-              className="shrink-0 text-muted-foreground/50 hover:text-destructive transition-colors"
+              className="shrink-0 text-white/20 hover:text-red-400 transition-colors"
             >
               <Trash2 size={14} />
             </button>
           </div>
         ))}
 
-        {/* Add block */}
         <button
           onClick={addBlock}
-          className="flex items-center gap-2 w-full px-3 py-2.5 rounded-xl border border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+          className="flex items-center gap-2 w-full px-4 py-3 rounded-2xl border border-dashed border-white/10 text-sm text-white/30 hover:text-white hover:border-white/25 transition-colors"
         >
           <Plus size={14} />
           Add block
@@ -367,18 +355,21 @@ function Step2({ blocks, onChange, onBack, onStart }: Step2Props) {
 
       {/* Actions */}
       <div className="flex gap-2 pt-1">
-        <Button variant="outline" onClick={onBack} className="gap-1.5">
+        <button
+          onClick={onBack}
+          className="flex items-center gap-1.5 h-12 px-5 rounded-2xl bg-white/8 text-white/60 font-semibold text-sm hover:bg-white/15 hover:text-white transition-colors active:scale-95"
+        >
           <ArrowLeft size={15} />
           Back
-        </Button>
-        <Button
+        </button>
+        <button
           onClick={onStart}
           disabled={blocks.length === 0}
-          className="flex-1 gap-2 font-semibold"
+          className="flex-1 h-12 rounded-2xl bg-primary text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-30 active:scale-[0.98] transition-all shadow-lg shadow-primary/30"
         >
           <Timer size={16} />
-          Save & Start
-        </Button>
+          Start Session
+        </button>
       </div>
     </div>
   );
@@ -410,7 +401,8 @@ export function PomodoroPlanner({ workspace, onClose, onStart }: Props) {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm"
+        className="fixed inset-0 z-40"
+        style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(10px)' }}
         onClick={onClose}
         aria-hidden
       />
@@ -421,36 +413,32 @@ export function PomodoroPlanner({ workspace, onClose, onStart }: Props) {
         aria-modal="true"
         aria-label="Pomodoro Planner"
         className={cn(
-          'fixed z-50 bg-background flex flex-col',
-          // Mobile: bottom sheet
-          'inset-x-0 bottom-0 rounded-t-2xl max-h-[92dvh]',
-          // Desktop: centered modal
+          'fixed z-50 flex flex-col',
+          'inset-x-0 bottom-0 rounded-t-3xl max-h-[92dvh]',
           'md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2',
-          'md:rounded-2xl md:w-[480px] md:max-h-[85vh] md:shadow-2xl',
-          'animate-slide-up',
+          'md:rounded-3xl md:w-[480px] md:max-h-[85vh] md:shadow-2xl',
         )}
+        style={{ background: 'oklch(0.1 0.008 30)', border: '1px solid rgba(255,255,255,0.08)' }}
       >
-        {/* Drag handle (mobile) */}
+        {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-1 md:hidden shrink-0">
-          <div className="w-9 h-1 rounded-full bg-border" />
+          <div className="w-10 h-1 rounded-full bg-white/20" />
         </div>
 
         {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-border shrink-0">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
-            <Timer size={18} className="text-primary shrink-0" />
-            <h2 className="font-semibold text-base truncate">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-white/8 shrink-0">
+          <div className="w-9 h-9 rounded-2xl bg-primary/15 border border-primary/25 flex items-center justify-center shrink-0">
+            <Timer size={16} className="text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h2 className="font-bold text-base text-white truncate">
               {step === 1 ? 'Pomodoro Planner' : 'Edit Plan'}
             </h2>
+            <p className="text-xs text-white/30">Step {step} of 2</p>
           </div>
-          {step === 2 && (
-            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-              Step 2 of 2
-            </span>
-          )}
           <button
             onClick={onClose}
-            className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            className="shrink-0 w-9 h-9 flex items-center justify-center rounded-2xl bg-white/8 text-white/50 hover:text-white hover:bg-white/15 transition-colors"
             aria-label="Close"
           >
             <X size={16} />
