@@ -114,10 +114,10 @@ export function TodoCard({ todo, onToggle, onDelete, onOpen, isDragOverlay = fal
       <button
         onClick={onToggle}
         className={cn(
-          'spring-check shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center',
+          'spring-check shrink-0 w-5 h-5 border-2 flex items-center justify-center',
           todo.completed
-            ? 'border-primary bg-primary'
-            : 'border-white/20 hover:border-white/50',
+            ? 'border-primary bg-primary rounded-full'
+            : 'border-white/20 hover:border-white/50 rounded-md',
         )}
         aria-label={`Mark "${todo.text}" as ${todo.completed ? 'incomplete' : 'complete'}`}
       >
