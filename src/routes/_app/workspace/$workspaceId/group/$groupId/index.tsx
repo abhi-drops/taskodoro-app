@@ -7,9 +7,12 @@ import {
   KeyboardSensor,
   useSensor,
   useSensors,
+  closestCenter,
+  rectIntersection,
   type DragStartEvent,
   type DragEndEvent,
   type DragOverEvent,
+  type CollisionDetection,
 } from '@dnd-kit/core'
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import { CheckSquare } from 'lucide-react'
@@ -98,6 +101,32 @@ function GroupRoute() {
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   )
+
+  // Use the top-left corner of the dragged card when checking against group tabs,
+  // so dragging near the left screen edge can still hit the first pill.
+  const collisionDetection: CollisionDetection = useCallback((args) => {
+    const { droppableContainers, active, collisionRect } = args
+
+    const tabContainers = droppableContainers.filter(c => (c.id as string).startsWith('tab:'))
+    const otherContainers = droppableContainers.filter(c => !(c.id as string).startsWith('tab:'))
+
+    if (tabContainers.length > 0) {
+      // Build a 1×1 rect from the top-left corner of the dragged element
+      const topLeftRect = {
+        ...collisionRect,
+        left: collisionRect.left,
+        top: collisionRect.top,
+        right: collisionRect.left + 1,
+        bottom: collisionRect.top + 1,
+        width: 1,
+        height: 1,
+      }
+      const tabHits = rectIntersection({ ...args, droppableContainers: tabContainers, collisionRect: topLeftRect })
+      if (tabHits.length > 0) return tabHits
+    }
+
+    return closestCenter({ ...args, droppableContainers: otherContainers, active })
+  }, [])
 
   function handleDragStart(event: DragStartEvent) {
     if (!activeWorkspace) return
@@ -238,7 +267,7 @@ function GroupRoute() {
   )
 
   return (
-    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
+    <DndContext sensors={sensors} collisionDetection={collisionDetection} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
       {isMobile ? (
         activeWorkspace ? (
           <MobileLayout
