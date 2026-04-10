@@ -78,6 +78,14 @@ text-destructive hover:bg-destructive/10
 - Work gradient: `from-primary to-orange-400`
 - Break gradient: `from-secondary to-yellow-300`
 
+### M3 Wavy Linear Progress (`M3LinearProgress`)
+Custom SVG canvas (`height: 28px`) used in the Pomodoro timer:
+- **Running**: sine wave with amplitude envelope, scrolling phase (`SPEED = 40px/s`)
+- **Paused**: amplitude springs to 0 (wave flattens to a colored line)
+- **Resume**: amplitude springs back with M3 overshoot bounce
+- Spring constants: ζ = 0.55, ω₀ = 18 rad/s → `SPRING_K = 324`, `SPRING_DAMP = 19.8`
+- Wave params: `MAX_AMP = 5.5`, `WAVELENGTH = 30`, `TAPER = 60` (ramp in/out envelope)
+
 ---
 
 ## Session-Tinted Backgrounds
@@ -128,13 +136,18 @@ Source: M3 web spring → cubic-bezier conversion table
 | `btn-spring` | scaleX 0.96 + scaleY 0.92, border-radius increases | Rect CTAs, overlay buttons |
 | `btn-spring-pill` | scaleY 0.88, pill stays pill | Tab chips, tag filters |
 | `btn-spring-icon` | scale 0.88, border-radius morphs `rounded-xl → rounded-2xl` | Icon buttons, small squares |
-| `spring-check` | scale 0.85, morphs to circle | Checkboxes, toggles |
+| `spring-check` | scale 0.85 spring bounce | Checkboxes, toggles |
 
 Spring easing used: `cubic-bezier(0.42, 1.67, 0.21, 0.90)` at 350ms (M3 expressive fast spatial).  
 The y > 1 control point causes overshoot = natural bounce/spring feel.  
 Color/bg transitions use fast effects: `cubic-bezier(0.31, 0.94, 0.34, 1.00)` at 150ms.
 
 Do **not** combine these with `active:scale-95` or `transition-all` — they handle both.
+
+### Checkbox shape states (`spring-check`)
+The checkbox border-radius is set **in markup**, not via CSS transition, to avoid the glitch where `rounded-md → rounded-full` animated mid-press:
+- **Unchecked**: `rounded-md`
+- **Checked**: `rounded-full` (circle, filled with `bg-primary`)
 
 ## Animations
 - Button spring morph: `btn-spring` / `btn-spring-pill` / `btn-spring-icon` / `spring-check`

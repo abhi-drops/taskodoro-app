@@ -48,11 +48,11 @@ The group route (`src/routes/_app/workspace/$workspaceId/group/$groupId/index.ts
 - **Mobile**: `MobileLayout` — tab-based group switching, bottom input bar, workspace sheet
 - **Desktop**: `Sidebar` + `BoardHeader` + `Board` — kanban columns side by side
 
-Drag-and-drop uses `@dnd-kit`. On mobile, dragging a card over a group tab navigates to that group (via `handleDragOver`). `DragOverlay` renders a ghost card during drag.
+Drag-and-drop uses `@dnd-kit`. On mobile, dragging a card over a group tab navigates to that group (via `handleDragOver`). `DragOverlay` renders a ghost card during drag. A custom `collisionDetection` strategy is used: group tabs (droppable IDs prefixed `tab:`) are tested with a 1×1 rect at the card's top-left corner via `rectIntersection`; all other droppables use `closestCenter`. This fixes edge hits on the leftmost tab pill.
 
 ### Features
 
-- **Pomodoro**: `PomodoroPlanner` builds a block schedule from workspace todos; `PomodoroTimer` runs it. Alarm sound uses a custom Capacitor plugin (`src/plugins/AlarmSound.ts`) bridging to native Android.
+- **Pomodoro**: `PomodoroPlanner` builds a block schedule from workspace todos; `PomodoroTimer` runs it. `M3LinearProgress` (`src/components/pomodoro/M3LinearProgress.tsx`) is a custom animated SVG wavy progress bar — amplitude springs to 0 when paused and bounces back on resume (M3 expressive spring: ζ=0.55, ω₀=18). Uses `@material/web` for M3 web components. Alarm sound uses a custom Capacitor plugin (`src/plugins/AlarmSound.ts`) bridging to native Android.
 - **Task details**: `TaskDetailsSheet` — markdown description, priority, color, tags, due date, subtasks, comments, group move.
 - **Search**: `SearchPanel` — filters todos across all groups in the active workspace.
 - **Group settings**: `onCompleteMoveTo` — when a todo is checked, it auto-moves to a configured target group.
@@ -72,3 +72,14 @@ Design system is documented in `style.md`. Key rules:
 ### Path alias
 
 `@/` maps to `src/`. Use it for all imports within `src/`.
+
+## Maintenance rule
+
+**Whenever you make a change that involves any of the following, update `CLAUDE.md` (and `style.md` if relevant) before finishing the task:**
+- New file created anywhere in `src/`
+- Directory structure change (folder added/moved/removed)
+- New dependency added to `package.json`
+- Design system change (new color, animation, component pattern, or styling convention)
+- New feature, plugin, or major behaviour change
+
+Keep the docs accurate — they are the single source of truth for future sessions.
