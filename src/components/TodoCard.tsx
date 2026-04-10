@@ -82,7 +82,7 @@ export function TodoCard({ todo, onToggle, onDelete, onOpen, isDragOverlay = fal
   return (
     <div
       ref={isDragOverlay ? undefined : setNodeRef}
-      style={{ ...style, ...colorBorderStyle, '--delay': `${index * 40}ms` } as React.CSSProperties}
+      style={{ ...style, ...colorBorderStyle, '--delay': `${index * 40}ms` } as unknown as React.CSSProperties}
       className={cn(
         'm3-list-item m3-hover-lift group flex items-center gap-2 rounded-2xl border bg-white/6 border-white/8 px-2 py-3',
         isDragging && !isDragOverlay && 'opacity-30',

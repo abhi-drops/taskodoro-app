@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, RotateCcw, Pause, Play, Plus, Check, Coffee, Zap, SkipForward } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 import type { PomodoroBlock } from '@/types/pomodoro';
 import type { AppAction } from '@/store/useAppStore';
 import { AlarmSound } from '@/plugins/AlarmSound';

@@ -429,7 +429,7 @@ function SearchResultCard({ todo, query, onClick, delay = 0 }: CardProps) {
   return (
     <button
       onClick={onClick}
-      style={{ ...colorBorderStyle, '--delay': `${delay}ms` } as React.CSSProperties}
+      style={{ ...colorBorderStyle, '--delay': `${delay}ms` } as unknown as React.CSSProperties}
       className="m3-list-item m3-hover-lift w-full text-left flex flex-col gap-1 rounded-2xl border border-white/8 bg-white/5 px-3 py-3 hover:bg-white/10 hover:border-white/15 transition-colors"
     >
       <div className="flex items-center gap-2 min-w-0">
