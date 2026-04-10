@@ -196,3 +196,318 @@
 @utility animate-slide-up {
   animation: slide-up 0.25s cubic-bezier(0.32, 0.72, 0, 1);
 }
+
+/* ─── M3 Expressive Animation Keyframes ─────────────────────────────────────
+   All durations and easings sourced from M3 motion foundation tokens.
+   Springs converted to cubic-bezier per M3 web conversion table.
+
+   Spring reference:
+     Expressive fast spatial:    cubic-bezier(0.42, 1.67, 0.21, 0.90) 350ms
+     Expressive default spatial: cubic-bezier(0.38, 1.21, 0.22, 1.00) 500ms
+     Expressive slow spatial:    cubic-bezier(0.39, 1.29, 0.35, 0.98) 650ms
+     Expressive fast effects:    cubic-bezier(0.31, 0.94, 0.34, 1.00) 150ms
+     Expressive default effects: cubic-bezier(0.34, 0.80, 0.34, 1.00) 200ms
+     Expressive slow effects:    cubic-bezier(0.34, 0.88, 0.34, 1.00) 300ms
+     Standard default spatial:   cubic-bezier(0.27, 1.06, 0.18, 1.00) 500ms
+─────────────────────────────────────────────────────────────────────────── */
+
+/* Sheet / bottom modal enter — default spatial, overshoots up then settles */
+@keyframes m3-sheet-enter {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Dialog / centered modal enter — scale + fade, fast spatial */
+@keyframes m3-dialog-enter {
+  from {
+    scale: 0.88;
+    opacity: 0;
+  }
+  to {
+    scale: 1;
+    opacity: 1;
+  }
+}
+
+/* List item enter — slides up from 16px with scale, for stagger */
+@keyframes m3-list-enter {
+  from {
+    transform: translateY(16px) scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Sidebar slide in — standard (no bounce, utilitarian) */
+@keyframes m3-sidebar-enter {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+
+/* Chip / badge pop — scale overshoot, fast spatial */
+@keyframes m3-pop {
+  from {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Badge count change — quick scale pulse */
+@keyframes m3-badge-bump {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+
+/* Fade in — effects spring, for backdrop and overlay content */
+@keyframes m3-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Checkmark stroke draw */
+@keyframes m3-check-draw {
+  from { stroke-dashoffset: 20; opacity: 0; }
+  to   { stroke-dashoffset: 0;  opacity: 1; }
+}
+
+/* Ripple expand — for touch feedback, fast effects */
+@keyframes m3-ripple {
+  from {
+    transform: scale(0);
+    opacity: 0.35;
+  }
+  to {
+    transform: scale(2.5);
+    opacity: 0;
+  }
+}
+
+/* Timer digit slide up (new digit enters from below) */
+@keyframes m3-digit-enter {
+  from {
+    transform: translateY(60%) scale(0.8);
+    opacity: 0;
+    filter: blur(4px);
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+/* Content reveal inside a sheet after it opens */
+@keyframes m3-content-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Floating action button enter */
+@keyframes m3-fab-enter {
+  from {
+    transform: scale(0.5) rotate(-8deg);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+/* ─── M3 Utility classes ──────────────────────────────────────────────────── */
+
+/* Sheets (bottom sheet, side panel) */
+@utility m3-sheet {
+  animation: m3-sheet-enter 500ms cubic-bezier(0.38, 1.21, 0.22, 1.00) both;
+}
+
+/* Centered dialogs */
+@utility m3-dialog {
+  animation: m3-dialog-enter 350ms cubic-bezier(0.42, 1.67, 0.21, 0.90) both;
+}
+
+/* List items — apply with stagger via [style="--delay:Nms"] */
+@utility m3-list-item {
+  animation: m3-list-enter 350ms cubic-bezier(0.42, 1.67, 0.21, 0.90) both;
+  animation-delay: var(--delay, 0ms);
+}
+
+/* Sidebar panel */
+@utility m3-sidebar {
+  animation: m3-sidebar-enter 500ms cubic-bezier(0.27, 1.06, 0.18, 1.00) both;
+}
+
+/* Chip / badge appear */
+@utility m3-pop {
+  animation: m3-pop 350ms cubic-bezier(0.42, 1.67, 0.21, 0.90) both;
+}
+
+/* Badge number bump when value changes */
+@utility m3-badge-bump {
+  animation: m3-badge-bump 350ms cubic-bezier(0.42, 1.67, 0.21, 0.90);
+}
+
+/* Backdrops and overlay content */
+@utility m3-fade-in {
+  animation: m3-fade-in 200ms cubic-bezier(0.34, 0.80, 0.34, 1.00) both;
+}
+
+/* Slow fade for full-screen transitions */
+@utility m3-fade-in-slow {
+  animation: m3-fade-in 300ms cubic-bezier(0.34, 0.88, 0.34, 1.00) both;
+}
+
+/* Checkmark draw */
+@utility m3-check-draw {
+  stroke-dasharray: 20;
+  stroke-dashoffset: 20;
+  animation: m3-check-draw 150ms cubic-bezier(0.31, 0.94, 0.34, 1.00) forwards;
+}
+
+/* Ripple pseudo-element container */
+@utility m3-ripple-container {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Ripple element (add via JS or ::after) */
+@utility m3-ripple {
+  animation: m3-ripple 400ms cubic-bezier(0.34, 0.80, 0.34, 1.00) forwards;
+}
+
+/* Timer digits */
+@utility m3-digit {
+  animation: m3-digit-enter 350ms cubic-bezier(0.42, 1.67, 0.21, 0.90) both;
+}
+
+/* Content inside a sheet, delayed after sheet opens */
+@utility m3-content-reveal {
+  animation: m3-content-reveal 200ms cubic-bezier(0.34, 0.80, 0.34, 1.00) both;
+  animation-delay: 120ms;
+}
+
+/* FAB / floating action button appear */
+@utility m3-fab-enter {
+  animation: m3-fab-enter 500ms cubic-bezier(0.38, 1.21, 0.22, 1.00) both;
+}
+
+/* Hover lift — standard spatial for card hover */
+@utility m3-hover-lift {
+  transition:
+    transform 500ms cubic-bezier(0.27, 1.06, 0.18, 1.00),
+    box-shadow 200ms cubic-bezier(0.34, 0.80, 0.34, 1.00);
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  }
+}
+
+/* ─── M3 Expressive spring easings ──────────────────────────────────────────
+   Source: M3 web conversion table
+   Fast spatial:    cubic-bezier(0.42, 1.67, 0.21, 0.90) 350ms  — small components / buttons
+   Default spatial: cubic-bezier(0.38, 1.21, 0.22, 1.00) 500ms  — medium elements
+   Fast effects:    cubic-bezier(0.31, 0.94, 0.34, 1.00) 150ms  — color / opacity
+   The y > 1 control points create the overshoot that gives the spring feel.
+─────────────────────────────────────────────────────────────────────────── */
+
+/* Base spring btn: transitions border-radius + scale with the overshoot curve */
+.btn-spring {
+  /* resting shape values */
+  --br: 1rem;           /* base border-radius (rounded-2xl) */
+  --br-press: 1.5rem;   /* more pill on press */
+  --sx: 1;
+  --sy: 1;
+
+  border-radius: var(--br);
+  transform: scale(var(--sx), var(--sy));
+  transition:
+    border-radius 350ms cubic-bezier(0.42, 1.67, 0.21, 0.90),
+    transform     350ms cubic-bezier(0.42, 1.67, 0.21, 0.90),
+    background-color 150ms cubic-bezier(0.31, 0.94, 0.34, 1.00),
+    box-shadow       150ms cubic-bezier(0.31, 0.94, 0.34, 1.00);
+}
+
+.btn-spring:active {
+  --br: var(--br-press);
+  --sx: 0.96;
+  --sy: 0.92;
+}
+
+/* Pill variant: goes to even rounder + slight wide squish */
+.btn-spring-pill {
+  --br: 9999px;
+  --br-press: 9999px;
+  --sx: 1;
+  --sy: 1;
+
+  border-radius: var(--br);
+  transform: scale(var(--sx), var(--sy));
+  transition:
+    border-radius 350ms cubic-bezier(0.42, 1.67, 0.21, 0.90),
+    transform     350ms cubic-bezier(0.42, 1.67, 0.21, 0.90),
+    background-color 150ms cubic-bezier(0.31, 0.94, 0.34, 1.00),
+    box-shadow       150ms cubic-bezier(0.31, 0.94, 0.34, 1.00);
+}
+
+.btn-spring-pill:active {
+  --sx: 0.97;
+  --sy: 0.88;
+}
+
+/* Icon btn: squishes to squircle on press */
+.btn-spring-icon {
+  --br: 0.75rem;        /* rounded-xl resting */
+  --br-press: 1.25rem;  /* more rounded on press */
+  --sx: 1;
+  --sy: 1;
+
+  border-radius: var(--br);
+  transform: scale(var(--sx), var(--sy));
+  transition:
+    border-radius 350ms cubic-bezier(0.42, 1.67, 0.21, 0.90),
+    transform     350ms cubic-bezier(0.42, 1.67, 0.21, 0.90),
+    background-color 150ms cubic-bezier(0.31, 0.94, 0.34, 1.00);
+}
+
+.btn-spring-icon:active {
+  --br: var(--br-press);
+  --sx: 0.88;
+  --sy: 0.88;
+}
+
+/* Checkbox / toggle: pops bigger then settles */
+.spring-check {
+  transition:
+    border-radius 350ms cubic-bezier(0.42, 1.67, 0.21, 0.90),
+    transform     350ms cubic-bezier(0.42, 1.67, 0.21, 0.90),
+    background-color 150ms cubic-bezier(0.31, 0.94, 0.34, 1.00);
+}
+
+.spring-check:active {
+  transform: scale(0.85);
+  border-radius: 9999px;
+}

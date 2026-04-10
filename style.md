@@ -120,8 +120,24 @@ Break: bg-secondary text-secondary-foreground
 
 ---
 
+## M3 Expressive Spring Classes (index.css)
+Source: M3 web spring → cubic-bezier conversion table
+
+| Class | Shape change on press | Use on |
+|---|---|---|
+| `btn-spring` | scaleX 0.96 + scaleY 0.92, border-radius increases | Rect CTAs, overlay buttons |
+| `btn-spring-pill` | scaleY 0.88, pill stays pill | Tab chips, tag filters |
+| `btn-spring-icon` | scale 0.88, border-radius morphs `rounded-xl → rounded-2xl` | Icon buttons, small squares |
+| `spring-check` | scale 0.85, morphs to circle | Checkboxes, toggles |
+
+Spring easing used: `cubic-bezier(0.42, 1.67, 0.21, 0.90)` at 350ms (M3 expressive fast spatial).  
+The y > 1 control point causes overshoot = natural bounce/spring feel.  
+Color/bg transitions use fast effects: `cubic-bezier(0.31, 0.94, 0.34, 1.00)` at 150ms.
+
+Do **not** combine these with `active:scale-95` or `transition-all` — they handle both.
+
 ## Animations
-- Button press: `active:scale-95`
+- Button spring morph: `btn-spring` / `btn-spring-pill` / `btn-spring-icon` / `spring-check`
 - Timer pulse on expire: `animate-pulse`
 - Block transition: `transition-all duration-300`
 - Progress bar: `transition-all duration-1000`

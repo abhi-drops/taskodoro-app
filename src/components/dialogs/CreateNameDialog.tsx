@@ -43,7 +43,7 @@ export function CreateNameDialog({ open, onOpenChange, onConfirm, title, placeho
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-50"
+        className="fixed inset-0 z-50 m3-fade-in"
         style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(10px)' }}
         onClick={() => onOpenChange(false)}
         aria-hidden
@@ -54,7 +54,7 @@ export function CreateNameDialog({ open, onOpenChange, onConfirm, title, placeho
         role="dialog"
         aria-modal="true"
         aria-labelledby="create-dialog-title"
-        className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-2rem)] max-w-sm rounded-3xl border border-white/10 shadow-2xl p-6"
+        className="m3-dialog fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100vw-2rem)] max-w-sm rounded-3xl border border-white/10 shadow-2xl p-6"
         style={{ background: 'oklch(0.12 0.01 30)' }}
         onClick={e => e.stopPropagation()}
       >
@@ -83,14 +83,14 @@ export function CreateNameDialog({ open, onOpenChange, onConfirm, title, placeho
             <button
               type="button"
               onClick={() => onOpenChange(false)}
-              className="flex-1 h-11 rounded-2xl bg-white/8 border border-white/10 text-white/60 text-sm font-semibold hover:bg-white/15 hover:text-white transition-colors active:scale-95"
+              className="btn-spring flex-1 h-11 bg-white/8 border border-white/10 text-white/60 text-sm font-semibold hover:bg-white/15 hover:text-white"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={!name.trim()}
-              className="flex-1 h-11 rounded-2xl bg-primary text-white text-sm font-bold disabled:opacity-30 active:scale-95 transition-all shadow-lg shadow-primary/30"
+              className="btn-spring flex-1 h-11 bg-primary text-white text-sm font-bold disabled:opacity-30 shadow-lg shadow-primary/30"
             >
               Create
             </button>

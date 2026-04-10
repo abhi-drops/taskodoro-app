@@ -81,21 +81,21 @@ export function MobileLayout({
 
         <button
           onClick={onOpenSearch}
-          className="flex items-center justify-center w-10 h-10 rounded-2xl bg-white/8 text-white/60 hover:text-white hover:bg-white/15 transition-colors shrink-0"
+          className="btn-spring-icon flex items-center justify-center w-10 h-10 bg-white/8 text-white/60 hover:text-white hover:bg-white/15 shrink-0"
           aria-label="Search tasks"
         >
           <Search size={17} />
         </button>
         <button
           onClick={onOpenPomodoro}
-          className="flex items-center justify-center w-10 h-10 rounded-2xl bg-white/8 text-white/60 hover:text-white hover:bg-white/15 transition-colors shrink-0"
+          className="btn-spring-icon flex items-center justify-center w-10 h-10 bg-white/8 text-white/60 hover:text-white hover:bg-white/15 shrink-0"
           aria-label="Pomodoro timer"
         >
           <Timer size={17} />
         </button>
         <button
           onClick={onNewGroup}
-          className="flex items-center gap-1.5 rounded-2xl bg-primary text-white px-3.5 h-9 text-sm font-semibold shrink-0 active:scale-95 transition-all shadow-lg shadow-primary/30"
+          className="btn-spring flex items-center gap-1.5 bg-primary text-white px-3.5 h-9 text-sm font-semibold shrink-0 shadow-lg shadow-primary/30"
           aria-label="New group"
         >
           <Plus size={15} />
@@ -150,7 +150,7 @@ export function MobileLayout({
             />
             <button
               type="submit"
-              className="flex items-center justify-center w-12 h-12 rounded-2xl bg-primary text-white shrink-0 active:scale-95 transition-all shadow-lg shadow-primary/30"
+              className="btn-spring-icon flex items-center justify-center w-12 h-12 bg-primary text-white shrink-0 shadow-lg shadow-primary/30"
               aria-label="Add todo"
             >
               <Plus size={18} />
@@ -191,7 +191,7 @@ function GroupTab({ group, isActive, onSelect }: GroupTabProps) {
         onClick={onSelect}
         aria-pressed={isActive}
         className={cn(
-          'flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 h-8 text-sm font-semibold transition-all shrink-0',
+          'btn-spring-pill flex items-center gap-1.5 whitespace-nowrap px-3.5 h-8 text-sm font-semibold shrink-0',
           isActive
             ? 'bg-primary text-white shadow-md shadow-primary/30'
             : 'bg-white/8 text-white/50 hover:text-white hover:bg-white/15',
@@ -251,14 +251,14 @@ function ActiveGroupView({ group, allGroups, onToggleTodo, onDeleteTodo, onDelet
 
         <button
           onClick={() => setSettingsOpen(true)}
-          className="flex items-center justify-center w-9 h-9 rounded-2xl text-white/25 hover:text-white hover:bg-white/8 transition-colors"
+          className="btn-spring-icon flex items-center justify-center w-9 h-9 text-white/25 hover:text-white hover:bg-white/8"
           aria-label="Group settings"
         >
           <Settings size={14} />
         </button>
         <button
           onClick={onDeleteGroup}
-          className="flex items-center justify-center w-9 h-9 rounded-2xl text-white/25 hover:text-red-400 hover:bg-red-400/10 transition-colors"
+          className="btn-spring-icon flex items-center justify-center w-9 h-9 text-white/25 hover:text-red-400 hover:bg-red-400/10"
           aria-label="Delete group"
         >
           <Trash2 size={14} />
@@ -280,10 +280,11 @@ function ActiveGroupView({ group, allGroups, onToggleTodo, onDeleteTodo, onDelet
             </div>
           )}
           <div className="flex flex-col gap-2 pt-1">
-            {group.todos.map(todo => (
+            {group.todos.map((todo, i) => (
               <TodoCard
                 key={todo.id}
                 todo={todo}
+                index={i}
                 onToggle={() => onToggleTodo(todo.id)}
                 onDelete={() => onDeleteTodo(todo.id)}
                 onOpen={() => onOpenTask(todo.id)}
@@ -317,7 +318,7 @@ function EmptyGroups({ onNewGroup }: { onNewGroup: () => void }) {
       <p className="text-sm font-medium text-white/40">No groups yet</p>
       <button
         onClick={onNewGroup}
-        className="text-sm text-primary font-semibold px-4 py-2 rounded-2xl bg-primary/10 hover:bg-primary/20 transition-colors active:scale-95"
+        className="btn-spring text-sm text-primary font-semibold px-4 py-2 bg-primary/10 hover:bg-primary/20"
       >
         Create your first group →
       </button>

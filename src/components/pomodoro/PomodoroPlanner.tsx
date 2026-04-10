@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { X, Search, ChevronUp, ChevronDown, Trash2, Plus, ArrowLeft, Timer, Zap, Coffee } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Workspace, Todo } from '@/types/index';
@@ -106,14 +106,15 @@ function Step1({ workspace, selected, workMins, breakMins, onToggleTask, onSetWo
               <div key={groupName}>
                 <p className="text-xs font-bold text-white/30 uppercase tracking-widest mb-2 px-1">{groupName}</p>
                 <div className="flex flex-col gap-1">
-                  {tasks.map(t => {
+                  {tasks.map((t, ti) => {
                     const active = isSelected(t.todo.id);
                     return (
                       <button
                         key={t.todo.id}
                         onClick={() => onToggleTask(t)}
+                        style={{ '--delay': `${ti * 30}ms` } as React.CSSProperties}
                         className={cn(
-                          'flex items-center gap-3 w-full text-left px-3 py-3 rounded-2xl transition-all text-sm active:scale-[0.98]',
+                          'm3-list-item btn-spring flex items-center gap-3 w-full text-left px-3 py-3 text-sm',
                           active
                             ? 'bg-primary/15 border border-primary/30'
                             : 'bg-white/5 border border-white/8 hover:bg-white/10',
@@ -275,8 +276,9 @@ function Step2({ blocks, onChange, onBack, onStart }: Step2Props) {
         {blocks.map((block, idx) => (
           <div
             key={block.id}
+            style={{ '--delay': `${idx * 35}ms` } as React.CSSProperties}
             className={cn(
-              'flex items-center gap-2 p-3 rounded-2xl border',
+              'm3-list-item flex items-center gap-2 p-3 rounded-2xl border',
               block.type === 'work'
                 ? 'border-primary/20 bg-primary/8'
                 : 'border-secondary/20 bg-secondary/8',
@@ -383,6 +385,14 @@ export function PomodoroPlanner({ workspace, onClose, onStart }: Props) {
   const [workMins, setWorkMins] = useState(25);
   const [breakMins, setBreakMins] = useState(5);
   const [blocks, setBlocks] = useState<PomodoroBlock[]>([]);
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)');
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
 
   function toggleTask(task: SelectedTask) {
     setSelected(prev =>
@@ -401,7 +411,7 @@ export function PomodoroPlanner({ workspace, onClose, onStart }: Props) {
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40"
+        className="fixed inset-0 z-40 m3-fade-in"
         style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(10px)' }}
         onClick={onClose}
         aria-hidden
@@ -414,9 +424,9 @@ export function PomodoroPlanner({ workspace, onClose, onStart }: Props) {
         aria-label="Pomodoro Planner"
         className={cn(
           'fixed z-50 flex flex-col',
-          'inset-x-0 bottom-0 rounded-t-3xl max-h-[92dvh]',
-          'md:inset-auto md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2',
-          'md:rounded-3xl md:w-[480px] md:max-h-[85vh] md:shadow-2xl',
+          isMobile
+            ? 'inset-x-0 bottom-0 rounded-t-3xl max-h-[92dvh] m3-sheet'
+            : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-3xl w-[480px] max-h-[85vh] shadow-2xl m3-dialog',
         )}
         style={{ background: 'oklch(0.1 0.008 30)', border: '1px solid rgba(255,255,255,0.08)' }}
       >

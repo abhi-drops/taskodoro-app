@@ -179,7 +179,7 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
       <div className="flex items-center justify-between px-4 py-3 shrink-0">
         <button
           onClick={() => { stopAlarm(); onClose(); }}
-          className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white/10 text-white/60 hover:text-white hover:bg-white/20 transition-colors"
+          className="btn-spring-icon w-10 h-10 flex items-center justify-center bg-white/10 text-white/60 hover:text-white hover:bg-white/20"
           aria-label="Close timer"
         >
           <X size={18} />
@@ -205,7 +205,7 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
 
         <button
           onClick={handleRestart}
-          className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white/10 text-white/60 hover:text-white hover:bg-white/20 transition-colors"
+          className="btn-spring-icon w-10 h-10 flex items-center justify-center bg-white/10 text-white/60 hover:text-white hover:bg-white/20"
           aria-label="Restart session"
         >
           <RotateCcw size={16} />
@@ -270,10 +270,10 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
             onClick={() => setIsRunning(r => !r)}
             disabled={expired}
             className={cn(
-              'w-16 h-16 rounded-2xl flex items-center justify-center transition-all',
+              'btn-spring w-16 h-16 flex items-center justify-center',
               isWork
-                ? 'bg-primary text-white shadow-lg shadow-primary/40 active:scale-95'
-                : 'bg-secondary text-secondary-foreground shadow-lg shadow-secondary/40 active:scale-95',
+                ? 'bg-primary text-white shadow-lg shadow-primary/40'
+                : 'bg-secondary text-secondary-foreground shadow-lg shadow-secondary/40',
               expired && 'opacity-40',
             )}
             aria-label={isRunning ? 'Pause' : 'Resume'}
@@ -283,7 +283,7 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
 
           <button
             onClick={handleAddFive}
-            className="h-14 px-5 rounded-2xl bg-white/10 text-white font-semibold text-sm flex items-center gap-2 hover:bg-white/20 transition-colors active:scale-95"
+            className="btn-spring h-14 px-5 bg-white/10 text-white font-semibold text-sm flex items-center gap-2 hover:bg-white/20"
           >
             <Plus size={16} />
             5 min
@@ -291,7 +291,7 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
 
           <button
             onClick={handleNextPress}
-            className="h-14 px-5 rounded-2xl bg-white/10 text-white font-semibold text-sm flex items-center gap-2 hover:bg-white/20 transition-colors active:scale-95"
+            className="btn-spring h-14 px-5 bg-white/10 text-white font-semibold text-sm flex items-center gap-2 hover:bg-white/20"
             aria-label="Next block"
           >
             <SkipForward size={16} />
@@ -316,21 +316,21 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
           <div className="flex flex-col gap-2.5 w-full max-w-xs">
             <button
               onClick={handleCheckOffAndNext}
-              className="h-12 rounded-xl bg-primary text-white font-semibold flex items-center justify-center gap-2 active:scale-95 transition-all"
+              className="btn-spring h-12 bg-primary text-white font-semibold flex items-center justify-center gap-2"
             >
               <Check size={16} />
               Check off &amp; continue
             </button>
             <button
               onClick={() => { setShowNextConfirm(false); handleNext(); }}
-              className="h-12 rounded-xl bg-white/10 text-white font-medium flex items-center justify-center gap-2 hover:bg-white/20 transition-colors active:scale-95"
+              className="btn-spring h-12 bg-white/10 text-white font-medium flex items-center justify-center gap-2 hover:bg-white/20"
             >
               <SkipForward size={16} />
               Skip &amp; continue
             </button>
             <button
               onClick={() => setShowNextConfirm(false)}
-              className="h-11 rounded-xl text-white/40 font-medium hover:text-white/60 transition-colors"
+              className="btn-spring h-11 text-white/40 font-medium hover:text-white/60"
             >
               Cancel
             </button>
@@ -357,7 +357,7 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
           <div className="flex flex-col gap-2.5 w-full max-w-xs">
             <button
               onClick={handleAddFive}
-              className="h-12 rounded-xl bg-white/10 text-white font-medium flex items-center justify-center gap-2 hover:bg-white/20 transition-colors active:scale-95"
+              className="btn-spring h-12 bg-white/10 text-white font-medium flex items-center justify-center gap-2 hover:bg-white/20"
             >
               <Plus size={16} />
               Add 5 minutes
@@ -374,7 +374,7 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
             <button
               onClick={handleNext}
               className={cn(
-                'h-12 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all active:scale-95',
+                'btn-spring h-12 font-semibold flex items-center justify-center gap-2',
                 !isWork ? 'bg-secondary text-secondary-foreground' : 'bg-white/10 text-white hover:bg-white/20',
               )}
             >
@@ -382,7 +382,7 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
             </button>
             <button
               onClick={onClose}
-              className="h-11 rounded-xl text-white/40 font-medium hover:text-white/60 transition-colors"
+              className="btn-spring h-11 text-white/40 font-medium hover:text-white/60"
             >
               Close timer
             </button>

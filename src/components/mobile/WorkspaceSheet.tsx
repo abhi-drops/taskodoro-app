@@ -23,7 +23,7 @@ export function WorkspaceSheet({
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40"
+        className="fixed inset-0 z-40 m3-fade-in"
         style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}
         onClick={onClose}
         aria-hidden
@@ -31,7 +31,7 @@ export function WorkspaceSheet({
 
       {/* Sheet */}
       <div
-        className="fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-3xl border-t border-white/10"
+        className="m3-sheet fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-3xl border-t border-white/10"
         style={{
           background: 'oklch(0.1 0.008 30)',
           paddingBottom: 'env(safe-area-inset-bottom)',
@@ -43,7 +43,7 @@ export function WorkspaceSheet({
         </div>
 
         {/* Title */}
-        <div className="flex items-center gap-2 px-5 pb-3">
+        <div className="m3-content-reveal flex items-center gap-2 px-5 pb-3">
           <h2 className="font-bold text-lg text-white flex-1">Workspaces</h2>
           <span className="text-xs text-white/30 font-medium">{workspaces.length}</span>
         </div>
@@ -53,7 +53,7 @@ export function WorkspaceSheet({
           {workspaces.length === 0 && (
             <p className="text-sm text-white/30 text-center py-8">No workspaces yet</p>
           )}
-          {workspaces.map(ws => {
+          {workspaces.map((ws, idx) => {
             const { total, done } = ws.groups.reduce(
               (acc, g) => ({
                 total: acc.total + g.todos.length,
@@ -67,11 +67,12 @@ export function WorkspaceSheet({
               <div
                 key={ws.id}
                 className={cn(
-                  'group flex items-center gap-3 rounded-2xl px-4 py-3.5 mb-1.5 cursor-pointer transition-all',
+                  'm3-list-item group flex items-center gap-3 rounded-2xl px-4 py-3.5 mb-1.5 cursor-pointer transition-all',
                   isActive
                     ? 'bg-primary/15 border border-primary/30'
                     : 'bg-white/6 border border-white/8 hover:bg-white/10',
                 )}
+                style={{ '--delay': `${80 + idx * 40}ms` } as React.CSSProperties}
                 onClick={() => { onSelectWorkspace(ws.id); onClose(); }}
                 role="button"
                 tabIndex={0}

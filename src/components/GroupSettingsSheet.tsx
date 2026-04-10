@@ -27,7 +27,7 @@ export function GroupSettingsSheet({ group, allGroups, workspaceId, onClose, dis
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40"
+        className="fixed inset-0 z-40 m3-fade-in"
         style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}
         onClick={onClose}
         aria-hidden="true"
@@ -38,7 +38,7 @@ export function GroupSettingsSheet({ group, allGroups, workspaceId, onClose, dis
         role="dialog"
         aria-modal="true"
         aria-labelledby="group-settings-title"
-        className="fixed inset-x-0 bottom-0 z-50 rounded-t-3xl border-t border-white/10 shadow-2xl"
+        className="m3-sheet fixed inset-x-0 bottom-0 z-50 rounded-t-3xl border-t border-white/10 shadow-2xl"
         style={{
           background: 'oklch(0.1 0.008 30)',
           paddingBottom: 'env(safe-area-inset-bottom)',
@@ -67,7 +67,7 @@ export function GroupSettingsSheet({ group, allGroups, workspaceId, onClose, dis
         </div>
 
         {/* Settings body */}
-        <div className="px-4 py-5 space-y-3">
+        <div className="m3-content-reveal px-4 py-5 space-y-3">
           <div className="space-y-1">
             <label className="text-xs font-bold text-white/30 uppercase tracking-widest">
               On complete, move task to

@@ -61,14 +61,14 @@ export function GroupColumn({ group, allGroups, onAddTodo, onToggleTodo, onDelet
         </div>
         <button
           onClick={() => setSettingsOpen(true)}
-          className="flex items-center justify-center w-8 h-8 rounded-xl text-white/20 hover:text-white hover:bg-white/8 transition-colors"
+          className="btn-spring-icon flex items-center justify-center w-8 h-8 text-white/20 hover:text-white hover:bg-white/8"
           aria-label="Group settings"
         >
           <Settings size={14} />
         </button>
         <button
           onClick={onDeleteGroup}
-          className="flex items-center justify-center w-8 h-8 rounded-xl text-white/20 hover:text-red-400 hover:bg-red-400/10 transition-colors"
+          className="btn-spring-icon flex items-center justify-center w-8 h-8 text-white/20 hover:text-red-400 hover:bg-red-400/10"
           aria-label="Delete group"
         >
           <Trash2 size={14} />
@@ -90,10 +90,11 @@ export function GroupColumn({ group, allGroups, onAddTodo, onToggleTodo, onDelet
                 Drop todos here
               </div>
             )}
-            {group.todos.map(todo => (
+            {group.todos.map((todo, i) => (
               <TodoCard
                 key={todo.id}
                 todo={todo}
+                index={i}
                 onToggle={() => onToggleTodo(todo.id)}
                 onDelete={() => onDeleteTodo(todo.id)}
                 onOpen={() => onOpenTask(todo.id)}
@@ -115,7 +116,7 @@ export function GroupColumn({ group, allGroups, onAddTodo, onToggleTodo, onDelet
           <button
             type="submit"
             disabled={!inputValue.trim()}
-            className="flex items-center justify-center w-10 h-10 rounded-2xl bg-primary text-white disabled:opacity-25 active:scale-95 transition-all shrink-0"
+            className="btn-spring-icon flex items-center justify-center w-10 h-10 bg-primary text-white disabled:opacity-25 shrink-0"
             aria-label="Add todo"
           >
             <Plus size={16} />

@@ -1,5 +1,4 @@
 import { PanelLeft, Plus, Timer, Search } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface Props {
   workspaceName: string;
@@ -16,10 +15,7 @@ export function BoardHeader({ workspaceName, onNewGroup, onToggleSidebar, onOpen
       style={{ background: 'oklch(0.09 0.008 30)' }}
     >
       <button
-        className={cn(
-          'md:hidden flex items-center justify-center w-10 h-10 rounded-2xl',
-          'bg-white/8 text-white/50 hover:text-white hover:bg-white/15 transition-colors',
-        )}
+        className="btn-spring-icon md:hidden flex items-center justify-center w-10 h-10 bg-white/8 text-white/50 hover:text-white hover:bg-white/15"
         onClick={onToggleSidebar}
         aria-label="Toggle sidebar"
       >
@@ -32,20 +28,20 @@ export function BoardHeader({ workspaceName, onNewGroup, onToggleSidebar, onOpen
         <button
           onClick={onOpenSearch}
           aria-label="Search tasks"
-          className="flex items-center justify-center w-10 h-10 rounded-2xl bg-white/8 text-white/50 hover:text-white hover:bg-white/15 transition-colors"
+          className="btn-spring-icon flex items-center justify-center w-10 h-10 bg-white/8 text-white/50 hover:text-white hover:bg-white/15"
         >
           <Search size={17} />
         </button>
         <button
           onClick={onOpenPomodoro}
           aria-label="Pomodoro timer"
-          className="flex items-center justify-center w-10 h-10 rounded-2xl bg-white/8 text-white/50 hover:text-white hover:bg-white/15 transition-colors"
+          className="btn-spring-icon flex items-center justify-center w-10 h-10 bg-white/8 text-white/50 hover:text-white hover:bg-white/15"
         >
           <Timer size={17} />
         </button>
         <button
           onClick={onNewGroup}
-          className="flex items-center gap-1.5 h-9 px-4 rounded-2xl bg-primary text-white text-sm font-bold active:scale-95 transition-all shadow-lg shadow-primary/30 ml-1"
+          className="btn-spring flex items-center gap-1.5 h-9 px-4 bg-primary text-white text-sm font-bold shadow-lg shadow-primary/30 ml-1"
         >
           <Plus size={15} />
           New Group

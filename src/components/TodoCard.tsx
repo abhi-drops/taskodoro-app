@@ -58,9 +58,10 @@ interface Props {
   onDelete: () => void;
   onOpen?: () => void;
   isDragOverlay?: boolean;
+  index?: number;
 }
 
-export function TodoCard({ todo, onToggle, onDelete, onOpen, isDragOverlay = false }: Props) {
+export function TodoCard({ todo, onToggle, onDelete, onOpen, isDragOverlay = false, index = 0 }: Props) {
   const {
     attributes,
     listeners,
@@ -81,9 +82,9 @@ export function TodoCard({ todo, onToggle, onDelete, onOpen, isDragOverlay = fal
   return (
     <div
       ref={isDragOverlay ? undefined : setNodeRef}
-      style={{ ...style, ...colorBorderStyle }}
+      style={{ ...style, ...colorBorderStyle, '--delay': `${index * 40}ms` } as React.CSSProperties}
       className={cn(
-        'group flex items-center gap-2 rounded-2xl border bg-white/6 border-white/8 px-2 py-3',
+        'm3-list-item m3-hover-lift group flex items-center gap-2 rounded-2xl border bg-white/6 border-white/8 px-2 py-3',
         isDragging && !isDragOverlay && 'opacity-30',
         isDragOverlay && 'shadow-2xl rotate-1 cursor-grabbing border-primary/30 bg-primary/10',
         'transition-colors hover:bg-white/10',
@@ -113,7 +114,7 @@ export function TodoCard({ todo, onToggle, onDelete, onOpen, isDragOverlay = fal
       <button
         onClick={onToggle}
         className={cn(
-          'shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all active:scale-90',
+          'spring-check shrink-0 w-5 h-5 rounded-md border-2 flex items-center justify-center',
           todo.completed
             ? 'border-primary bg-primary'
             : 'border-white/20 hover:border-white/50',
@@ -122,7 +123,7 @@ export function TodoCard({ todo, onToggle, onDelete, onOpen, isDragOverlay = fal
       >
         {todo.completed && (
           <svg viewBox="0 0 10 8" className="w-3 h-3 text-white fill-current">
-            <path d="M1 4l3 3 5-6" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M1 4l3 3 5-6" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" className="m3-check-draw" />
           </svg>
         )}
       </button>

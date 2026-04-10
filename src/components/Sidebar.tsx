@@ -1,3 +1,4 @@
+import React from 'react';
 import { Plus, Trash2, X, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Workspace } from '@/types/index';
@@ -26,7 +27,7 @@ export function Sidebar({
       {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-30 md:hidden"
+          className="fixed inset-0 z-30 md:hidden m3-fade-in"
           style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(6px)' }}
           onClick={onClose}
           aria-hidden
@@ -49,7 +50,7 @@ export function Sidebar({
           </div>
           <span className="font-bold text-sm text-white flex-1 tracking-tight">Workspaces</span>
           <button
-            className="h-7 w-7 md:hidden flex items-center justify-center rounded-xl text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+            className="btn-spring-icon h-7 w-7 md:hidden flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10"
             onClick={onClose}
             aria-label="Close sidebar"
           >
@@ -62,13 +63,14 @@ export function Sidebar({
           {workspaces.length === 0 && (
             <p className="text-xs text-white/25 text-center py-8">No workspaces yet</p>
           )}
-          {workspaces.map(ws => (
+          {workspaces.map((ws, idx) => (
             <WorkspaceItem
               key={ws.id}
               workspace={ws}
               isActive={ws.id === activeWorkspaceId}
               onSelect={() => { onSelectWorkspace(ws.id); onClose(); }}
               onDelete={() => onDeleteWorkspace(ws.id)}
+              index={idx}
             />
           ))}
         </div>
@@ -77,7 +79,7 @@ export function Sidebar({
         <div className="p-2 border-t border-white/8">
           <button
             onClick={onNewWorkspace}
-            className="w-full flex items-center gap-2 rounded-2xl px-3 py-2.5 text-sm font-semibold text-white/40 hover:text-white bg-white/5 hover:bg-white/10 border border-white/8 transition-colors"
+            className="btn-spring w-full flex items-center gap-2 px-3 py-2.5 text-sm font-semibold text-white/40 hover:text-white bg-white/5 hover:bg-white/10 border border-white/8"
           >
             <Plus size={14} />
             New Workspace
@@ -93,9 +95,10 @@ interface WorkspaceItemProps {
   isActive: boolean;
   onSelect: () => void;
   onDelete: () => void;
+  index?: number;
 }
 
-function WorkspaceItem({ workspace, isActive, onSelect, onDelete }: WorkspaceItemProps) {
+function WorkspaceItem({ workspace, isActive, onSelect, onDelete, index = 0 }: WorkspaceItemProps) {
   const { totalTodos, completedTodos } = workspace.groups.reduce(
     (acc, g) => ({
       totalTodos: acc.totalTodos + g.todos.length,
@@ -107,8 +110,9 @@ function WorkspaceItem({ workspace, isActive, onSelect, onDelete }: WorkspaceIte
 
   return (
     <div
+      style={{ '--delay': `${index * 40}ms` } as React.CSSProperties}
       className={cn(
-        'group flex items-center gap-2 rounded-2xl px-3 py-2.5 cursor-pointer transition-all',
+        'm3-list-item group flex items-center gap-2 rounded-2xl px-3 py-2.5 cursor-pointer transition-all',
         isActive
           ? 'bg-primary/12 border border-primary/25'
           : 'border border-transparent hover:bg-white/6 hover:border-white/8',
@@ -136,7 +140,7 @@ function WorkspaceItem({ workspace, isActive, onSelect, onDelete }: WorkspaceIte
       </div>
       <button
         onClick={e => { e.stopPropagation(); onDelete(); }}
-        className="flex items-center justify-center w-7 h-7 rounded-xl text-white/15 hover:text-red-400 hover:bg-red-400/10 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100"
+        className="btn-spring-icon flex items-center justify-center w-7 h-7 text-white/15 hover:text-red-400 hover:bg-red-400/10 opacity-100 md:opacity-0 md:group-hover:opacity-100"
         aria-label={`Delete workspace ${workspace.name}`}
       >
         <Trash2 size={13} />

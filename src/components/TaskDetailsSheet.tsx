@@ -160,8 +160,9 @@ export function TaskDetailsSheet({
       className={cn(
         'flex flex-col z-50',
         isMobile
-          ? 'fixed inset-x-0 bottom-0 rounded-t-3xl shadow-2xl max-h-[90dvh] border-t border-white/10'
+          ? 'm3-sheet fixed inset-x-0 bottom-0 rounded-t-3xl shadow-2xl max-h-[90dvh] border-t border-white/10'
           : 'fixed inset-y-0 right-0 w-[420px] border-l border-white/10 shadow-2xl',
+        !isMobile && 'm3-sidebar',
       )}
       style={{
         background: 'oklch(0.1 0.008 30)',
@@ -177,7 +178,7 @@ export function TaskDetailsSheet({
       )}
 
       {/* Header */}
-      <div className="flex items-start gap-2 px-4 py-3 border-b border-white/8 shrink-0">
+      <div className="m3-content-reveal flex items-start gap-2 px-4 py-3 border-b border-white/8 shrink-0">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <span className="shrink-0 text-[10px] font-mono font-bold text-white/25 bg-white/6 border border-white/10 rounded-md px-1.5 py-0.5">
@@ -225,7 +226,7 @@ export function TaskDetailsSheet({
 
       {/* Scrollable body */}
       <div className="flex-1 overflow-y-auto min-h-0">
-        <div className="px-4 py-4 space-y-5">
+        <div className="px-4 py-4 space-y-5 m3-content-reveal" style={{ animationDelay: '60ms' }}>
 
           {/* Priority */}
           <Section icon={<Flag size={13} />} label="Priority">
@@ -235,7 +236,7 @@ export function TaskDetailsSheet({
                   key={p}
                   onClick={() => patch({ priority: todo.priority === p ? undefined : p })}
                   className={cn(
-                    'px-3.5 py-1.5 rounded-full text-sm font-semibold transition-all active:scale-95',
+                    'btn-spring-pill px-3.5 py-1.5 text-sm font-semibold',
                     todo.priority === p
                       ? PRIORITY_CONFIG[p].active
                       : 'bg-white/8 text-white/40 hover:bg-white/15 hover:text-white border border-white/8',
@@ -258,7 +259,7 @@ export function TaskDetailsSheet({
                     aria-label={sub.completed ? 'Uncheck subtask' : 'Check subtask'}
                   >
                     {sub.completed
-                      ? <CheckCircle2 size={17} className="text-primary" />
+                      ? <CheckCircle2 size={17} className="text-primary m3-pop" />
                       : <Circle size={17} className="text-white/25" />
                     }
                   </button>
@@ -472,7 +473,7 @@ export function TaskDetailsSheet({
   return (
     <>
       <div
-        className="fixed inset-0 z-40"
+        className="fixed inset-0 z-40 m3-fade-in"
         style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}
         onClick={onClose}
         aria-hidden="true"

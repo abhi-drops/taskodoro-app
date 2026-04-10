@@ -175,8 +175,8 @@ export function SearchPanel({ workspace, onOpenTask, onClose, isMobile }: Props)
       className={cn(
         'flex flex-col z-50',
         isMobile
-          ? 'fixed inset-x-0 bottom-0 rounded-t-3xl shadow-2xl border-t border-white/10'
-          : 'fixed inset-y-0 right-0 w-[440px] border-l border-white/10 shadow-2xl',
+          ? 'm3-sheet fixed inset-x-0 bottom-0 rounded-t-3xl shadow-2xl border-t border-white/10'
+          : 'm3-sidebar fixed inset-y-0 right-0 w-[440px] border-l border-white/10 shadow-2xl',
       )}
       style={{
         background: 'oklch(0.1 0.008 30)',
@@ -258,7 +258,7 @@ export function SearchPanel({ workspace, onOpenTask, onClose, isMobile }: Props)
 
       {/* Filter sections */}
       {filtersOpen && (
-        <div className="shrink-0 border-b border-white/8 px-4 py-3 space-y-4">
+        <div className="m3-content-reveal shrink-0 border-b border-white/8 px-4 py-3 space-y-4">
 
           {/* Completion */}
           <div className="space-y-1.5">
@@ -383,11 +383,12 @@ export function SearchPanel({ workspace, onOpenTask, onClose, isMobile }: Props)
                   <span className="text-xs font-bold text-white/20 bg-white/8 rounded-full px-1.5">{todos.length}</span>
                 </div>
                 <div className="space-y-1.5">
-                  {todos.map(todo => (
+                  {todos.map((todo, ti) => (
                     <SearchResultCard
                       key={todo.id}
                       todo={todo}
                       query={query}
+                      delay={ti * 30}
                       onClick={() => { onOpenTask(group.id, todo.id); onClose(); }}
                     />
                   ))}
@@ -403,7 +404,7 @@ export function SearchPanel({ workspace, onOpenTask, onClose, isMobile }: Props)
   return (
     <>
       <div
-        className="fixed inset-0 z-40"
+        className="fixed inset-0 z-40 m3-fade-in"
         style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)' }}
         onClick={onClose}
         aria-hidden="true"
@@ -415,9 +416,9 @@ export function SearchPanel({ workspace, onOpenTask, onClose, isMobile }: Props)
 
 // ─── Result Card ──────────────────────────────────────────────────────────────
 
-interface CardProps { todo: Todo; query: string; onClick: () => void; }
+interface CardProps { todo: Todo; query: string; onClick: () => void; delay?: number; }
 
-function SearchResultCard({ todo, query, onClick }: CardProps) {
+function SearchResultCard({ todo, query, onClick, delay = 0 }: CardProps) {
   const colorBorderStyle = todo.color ? { borderLeftColor: todo.color, borderLeftWidth: '3px' } : {};
   const matchedComment = query.trim()
     ? (todo.comments ?? []).find(c => c.text.toLowerCase().includes(query.toLowerCase()))
@@ -428,8 +429,8 @@ function SearchResultCard({ todo, query, onClick }: CardProps) {
   return (
     <button
       onClick={onClick}
-      style={colorBorderStyle}
-      className="w-full text-left flex flex-col gap-1 rounded-2xl border border-white/8 bg-white/5 px-3 py-3 hover:bg-white/10 hover:border-white/15 transition-all active:scale-[0.99]"
+      style={{ ...colorBorderStyle, '--delay': `${delay}ms` } as React.CSSProperties}
+      className="m3-list-item m3-hover-lift w-full text-left flex flex-col gap-1 rounded-2xl border border-white/8 bg-white/5 px-3 py-3 hover:bg-white/10 hover:border-white/15 transition-colors"
     >
       <div className="flex items-center gap-2 min-w-0">
         <span className="shrink-0 text-[10px] font-mono font-bold text-white/20 bg-white/6 border border-white/8 rounded-md px-1.5 py-0.5">
