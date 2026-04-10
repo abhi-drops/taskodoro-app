@@ -3,6 +3,7 @@ import { X, RotateCcw, Pause, Play, Plus, Check, Coffee, Zap, SkipForward } from
 import { cn } from '@/lib/utils';
 import type { PomodoroBlock } from '@/types/pomodoro';
 import type { AppAction } from '@/store/useAppStore';
+import { M3LinearProgress } from './M3LinearProgress';
 import { AlarmSound } from '@/plugins/AlarmSound';
 
 interface Props {
@@ -240,19 +241,9 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
           </p>
         </div>
 
-        {/* Progress bar */}
+        {/* Progress bar — M3 Expressive linear progress */}
         <div className="w-full max-w-xs">
-          <div className="h-2 rounded-full bg-white/10 overflow-hidden">
-            <div
-              className={cn(
-                'h-full rounded-full transition-all duration-1000',
-                isWork
-                  ? 'bg-gradient-to-r from-primary to-orange-400'
-                  : 'bg-gradient-to-r from-secondary to-yellow-300',
-              )}
-              style={{ width: `${progressPct}%` }}
-            />
-          </div>
+          <M3LinearProgress value={progressPct / 100} isWork={isWork} isRunning={isRunning} expired={expired} />
           <div className="flex justify-between mt-1.5">
             <span className="text-xs text-white/30 font-mono">
               {Math.round((1 - progress) * block.durationMins)}m elapsed
@@ -269,12 +260,18 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
             onClick={() => setIsRunning(r => !r)}
             disabled={expired}
             className={cn(
-              'btn-spring w-16 h-16 flex items-center justify-center',
+              'btn-spring flex items-center justify-center',
               isWork
                 ? 'bg-primary text-white shadow-lg shadow-primary/40'
                 : 'bg-secondary text-secondary-foreground shadow-lg shadow-secondary/40',
               expired && 'opacity-40',
             )}
+            style={{
+              width: '4rem',
+              height: '4rem',
+              borderRadius: isRunning ? '1rem' : '50%',
+              transition: 'border-radius 400ms cubic-bezier(0.34, 1.56, 0.64, 1), width 400ms cubic-bezier(0.34, 1.56, 0.64, 1), height 400ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+            }}
             aria-label={isRunning ? 'Pause' : 'Resume'}
           >
             {isRunning ? <Pause size={24} /> : <Play size={24} />}

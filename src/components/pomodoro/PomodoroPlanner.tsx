@@ -1,5 +1,23 @@
 import { useState, useMemo, useEffect } from 'react';
-import { X, Search, ChevronUp, ChevronDown, Trash2, Plus, ArrowLeft, Timer, Zap, Coffee } from 'lucide-react';
+import {
+  DndContext,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+  DragOverlay,
+  type DragEndEvent,
+  type DragStartEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { X, Search, GripVertical, Trash2, Plus, ArrowLeft, Timer, Zap, Coffee } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Workspace, Todo } from '@/types/index';
 import type { PomodoroBlock } from '@/types/pomodoro';
@@ -219,6 +237,93 @@ function Step1({ workspace, selected, workMins, breakMins, onToggleTask, onSetWo
   );
 }
 
+// ─── Sortable block row ───────────────────────────────────────────────────────
+
+interface BlockRowProps {
+  block: PomodoroBlock;
+  onUpdate: (patch: Partial<PomodoroBlock>) => void;
+  onRemove: () => void;
+  isDragOverlay?: boolean;
+}
+
+function BlockRow({ block, onUpdate, onRemove, isDragOverlay }: BlockRowProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: block.id });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.35 : 1,
+    touchAction: 'none',
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={isDragOverlay ? undefined : style}
+      className={cn(
+        'flex items-center gap-2 p-3 rounded-2xl border select-none',
+        block.type === 'work'
+          ? 'border-primary/20 bg-primary/8'
+          : 'border-secondary/20 bg-secondary/8',
+        isDragOverlay && 'shadow-2xl shadow-black/50 scale-[1.02]',
+      )}
+    >
+      {/* Drag handle */}
+      <button
+        {...attributes}
+        {...listeners}
+        className="shrink-0 cursor-grab active:cursor-grabbing p-1 -ml-1 rounded-lg text-white/20 hover:text-white/60 transition-colors"
+        aria-label="Drag to reorder"
+      >
+        <GripVertical size={15} />
+      </button>
+
+      {/* Type toggle */}
+      <button
+        onClick={() => onUpdate({ type: block.type === 'work' ? 'break' : 'work' })}
+        className={cn(
+          'shrink-0 text-xs font-bold px-2.5 py-1 rounded-full transition-colors flex items-center gap-1',
+          block.type === 'work'
+            ? 'bg-primary/20 text-primary'
+            : 'bg-secondary/30 text-secondary-foreground',
+        )}
+      >
+        {block.type === 'work' ? <><Zap size={10} />Work</> : <><Coffee size={10} />Break</>}
+      </button>
+
+      {/* Label */}
+      <input
+        value={block.label}
+        onChange={e => onUpdate({ label: e.target.value })}
+        className="flex-1 min-w-0 bg-transparent text-sm text-white outline-none placeholder:text-white/25"
+        placeholder="Label…"
+      />
+
+      {/* Duration */}
+      <div className="flex items-center gap-1 shrink-0">
+        <input
+          type="number"
+          min={1}
+          max={120}
+          value={block.durationMins}
+          onChange={e => onUpdate({ durationMins: Math.max(1, Number(e.target.value)) })}
+          className="w-9 bg-transparent text-sm text-center text-white outline-none"
+        />
+        <span className="text-xs text-white/30">m</span>
+      </div>
+
+      {/* Delete */}
+      <button
+        onClick={onRemove}
+        className="shrink-0 text-white/20 hover:text-red-400 transition-colors"
+        aria-label="Remove block"
+      >
+        <Trash2 size={14} />
+      </button>
+    </div>
+  );
+}
+
 // ─── Step 2 ───────────────────────────────────────────────────────────────────
 
 interface Step2Props {
@@ -229,7 +334,13 @@ interface Step2Props {
 }
 
 function Step2({ blocks, onChange, onBack, onStart }: Step2Props) {
+  const [activeId, setActiveId] = useState<string | null>(null);
   const totalMins = blocks.reduce((s, b) => s + b.durationMins, 0);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 6 } }),
+  );
 
   function update(id: string, patch: Partial<PomodoroBlock>) {
     onChange(blocks.map(b => (b.id === id ? { ...b, ...patch } : b)));
@@ -239,21 +350,7 @@ function Step2({ blocks, onChange, onBack, onStart }: Step2Props) {
     onChange(blocks.filter(b => b.id !== id));
   }
 
-  function moveUp(idx: number) {
-    if (idx === 0) return;
-    const next = [...blocks];
-    [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
-    onChange(next);
-  }
-
-  function moveDown(idx: number) {
-    if (idx === blocks.length - 1) return;
-    const next = [...blocks];
-    [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
-    onChange(next);
-  }
-
-  function addBlock() {
+  function addWork() {
     onChange([...blocks, {
       id: crypto.randomUUID(),
       type: 'work',
@@ -262,6 +359,32 @@ function Step2({ blocks, onChange, onBack, onStart }: Step2Props) {
       completed: false,
     }]);
   }
+
+  function addBreak() {
+    onChange([...blocks, {
+      id: crypto.randomUUID(),
+      type: 'break',
+      label: 'Break',
+      durationMins: 5,
+      completed: false,
+    }]);
+  }
+
+  function handleDragStart(event: DragStartEvent) {
+    setActiveId(event.active.id as string);
+  }
+
+  function handleDragEnd(event: DragEndEvent) {
+    setActiveId(null);
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIdx = blocks.findIndex(b => b.id === active.id);
+      const newIdx = blocks.findIndex(b => b.id === over.id);
+      onChange(arrayMove(blocks, oldIdx, newIdx));
+    }
+  }
+
+  const activeBlock = activeId ? blocks.find(b => b.id === activeId) : null;
 
   return (
     <div className="flex flex-col flex-1 min-h-0 gap-3 p-4">
@@ -272,94 +395,60 @@ function Step2({ blocks, onChange, onBack, onStart }: Step2Props) {
       </div>
 
       {/* Block list */}
-      <div className="flex-1 overflow-y-auto min-h-0 -mx-4 px-4 flex flex-col gap-2">
-        {blocks.map((block, idx) => (
-          <div
-            key={block.id}
-            style={{ '--delay': `${idx * 35}ms` } as React.CSSProperties}
-            className={cn(
-              'm3-list-item flex items-center gap-2 p-3 rounded-2xl border',
-              block.type === 'work'
-                ? 'border-primary/20 bg-primary/8'
-                : 'border-secondary/20 bg-secondary/8',
-            )}
-          >
-            {/* Up/Down */}
-            <div className="flex flex-col gap-0.5 shrink-0">
-              <button
-                onClick={() => moveUp(idx)}
-                disabled={idx === 0}
-                className="p-0.5 rounded-lg text-white/25 hover:text-white disabled:opacity-20"
-              >
-                <ChevronUp size={13} />
-              </button>
-              <button
-                onClick={() => moveDown(idx)}
-                disabled={idx === blocks.length - 1}
-                className="p-0.5 rounded-lg text-white/25 hover:text-white disabled:opacity-20"
-              >
-                <ChevronDown size={13} />
-              </button>
-            </div>
-
-            {/* Type toggle */}
-            <button
-              onClick={() => update(block.id, { type: block.type === 'work' ? 'break' : 'work' })}
-              className={cn(
-                'shrink-0 text-xs font-bold px-2.5 py-1 rounded-full transition-colors flex items-center gap-1',
-                block.type === 'work'
-                  ? 'bg-primary/20 text-primary'
-                  : 'bg-secondary/30 text-secondary-foreground',
-              )}
-            >
-              {block.type === 'work' ? <><Zap size={10} />Work</> : <><Coffee size={10} />Break</>}
-            </button>
-
-            {/* Label */}
-            <input
-              value={block.label}
-              onChange={e => update(block.id, { label: e.target.value })}
-              className="flex-1 min-w-0 bg-transparent text-sm text-white outline-none placeholder:text-white/25"
-              placeholder="Label…"
-            />
-
-            {/* Duration */}
-            <div className="flex items-center gap-1 shrink-0">
-              <input
-                type="number"
-                min={1}
-                max={120}
-                value={block.durationMins}
-                onChange={e => update(block.id, { durationMins: Math.max(1, Number(e.target.value)) })}
-                className="w-9 bg-transparent text-sm text-center text-white outline-none"
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy}>
+          <div className="flex-1 overflow-y-auto min-h-0 -mx-4 px-4 flex flex-col gap-2">
+            {blocks.map(block => (
+              <BlockRow
+                key={block.id}
+                block={block}
+                onUpdate={patch => update(block.id, patch)}
+                onRemove={() => remove(block.id)}
               />
-              <span className="text-xs text-white/30">m</span>
+            ))}
+
+            {/* Add buttons */}
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={addWork}
+                className="btn-spring flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border border-dashed border-primary/20 text-sm text-primary/60 hover:text-primary hover:border-primary/40 hover:bg-primary/5 transition-colors"
+              >
+                <Plus size={14} />
+                Work
+              </button>
+              <button
+                onClick={addBreak}
+                className="btn-spring flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-2xl border border-dashed border-secondary/25 text-sm text-secondary/60 hover:text-secondary hover:border-secondary/50 hover:bg-secondary/5 transition-colors"
+              >
+                <Coffee size={14} />
+                Break
+              </button>
             </div>
-
-            {/* Delete */}
-            <button
-              onClick={() => remove(block.id)}
-              className="shrink-0 text-white/20 hover:text-red-400 transition-colors"
-            >
-              <Trash2 size={14} />
-            </button>
           </div>
-        ))}
+        </SortableContext>
 
-        <button
-          onClick={addBlock}
-          className="flex items-center gap-2 w-full px-4 py-3 rounded-2xl border border-dashed border-white/10 text-sm text-white/30 hover:text-white hover:border-white/25 transition-colors"
-        >
-          <Plus size={14} />
-          Add block
-        </button>
-      </div>
+        <DragOverlay dropAnimation={{ duration: 180, easing: 'cubic-bezier(0.18,0.67,0.6,1.22)' }}>
+          {activeBlock && (
+            <BlockRow
+              block={activeBlock}
+              onUpdate={() => {}}
+              onRemove={() => {}}
+              isDragOverlay
+            />
+          )}
+        </DragOverlay>
+      </DndContext>
 
       {/* Actions */}
       <div className="flex gap-2 pt-1">
         <button
           onClick={onBack}
-          className="flex items-center gap-1.5 h-12 px-5 rounded-2xl bg-white/8 text-white/60 font-semibold text-sm hover:bg-white/15 hover:text-white transition-colors active:scale-95"
+          className="btn-spring flex items-center gap-1.5 h-12 px-5 rounded-2xl bg-white/8 text-white/60 font-semibold text-sm hover:bg-white/15 hover:text-white transition-colors"
         >
           <ArrowLeft size={15} />
           Back
@@ -367,7 +456,7 @@ function Step2({ blocks, onChange, onBack, onStart }: Step2Props) {
         <button
           onClick={onStart}
           disabled={blocks.length === 0}
-          className="flex-1 h-12 rounded-2xl bg-primary text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-30 active:scale-[0.98] transition-all shadow-lg shadow-primary/30"
+          className="btn-spring flex-1 h-12 rounded-2xl bg-primary text-white font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-30 shadow-lg shadow-primary/30"
         >
           <Timer size={16} />
           Start Session
