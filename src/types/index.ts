@@ -27,8 +27,13 @@ export interface Todo {
   subtasks?: SubTask[];
 }
 
+export type TodoSortKey = 'none' | 'priority' | 'dueDate' | 'createdAt' | 'alpha' | 'completedLast';
+export type TodoFilterKey = 'all' | 'incomplete' | 'completed';
+
 export interface GroupSettings {
   onCompleteMoveTo?: string | null;
+  sortBy?: TodoSortKey;
+  filterBy?: TodoFilterKey;
 }
 
 export interface Group {

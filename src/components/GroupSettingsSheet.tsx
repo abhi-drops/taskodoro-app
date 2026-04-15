@@ -1,5 +1,6 @@
 import { Settings, X } from 'lucide-react';
-import type { Group, GroupSettings } from '@/types/index';
+import { cn } from '@/lib/utils';
+import type { Group, GroupSettings, TodoSortKey, TodoFilterKey } from '@/types/index';
 import type { AppAction } from '@/store/useAppStore';
 
 type Dispatch = React.Dispatch<AppAction>;
@@ -12,15 +13,40 @@ interface Props {
   dispatch: Dispatch;
 }
 
+const SORT_OPTIONS: { key: TodoSortKey; label: string }[] = [
+  { key: 'none',          label: 'None' },
+  { key: 'completedLast', label: 'Active first' },
+  { key: 'priority',      label: 'Priority' },
+  { key: 'dueDate',       label: 'Due date' },
+  { key: 'createdAt',     label: 'Created' },
+  { key: 'alpha',         label: 'A → Z' },
+];
+
+const FILTER_OPTIONS: { key: TodoFilterKey; label: string }[] = [
+  { key: 'all',        label: 'All' },
+  { key: 'incomplete', label: 'Incomplete' },
+  { key: 'completed',  label: 'Completed' },
+];
+
 export function GroupSettingsSheet({ group, allGroups, workspaceId, onClose, dispatch }: Props) {
   const otherGroups = allGroups.filter(g => g.id !== group.id);
   const currentTarget = group.settings?.onCompleteMoveTo ?? '';
+  const currentSort = group.settings?.sortBy ?? 'none';
+  const currentFilter = group.settings?.filterBy ?? 'all';
 
   function handleMoveTargetChange(value: string) {
     const settings: GroupSettings = {
       onCompleteMoveTo: value === '' ? null : value,
     };
     dispatch({ type: 'UPDATE_GROUP_SETTINGS', payload: { workspaceId, groupId: group.id, settings } });
+  }
+
+  function handleSortChange(key: TodoSortKey) {
+    dispatch({ type: 'UPDATE_GROUP_SETTINGS', payload: { workspaceId, groupId: group.id, settings: { sortBy: key } } });
+  }
+
+  function handleFilterChange(key: TodoFilterKey) {
+    dispatch({ type: 'UPDATE_GROUP_SETTINGS', payload: { workspaceId, groupId: group.id, settings: { filterBy: key } } });
   }
 
   return (
@@ -67,8 +93,56 @@ export function GroupSettingsSheet({ group, allGroups, workspaceId, onClose, dis
         </div>
 
         {/* Settings body */}
-        <div className="m3-content-reveal px-4 py-5 space-y-3">
-          <div className="space-y-1">
+        <div className="m3-content-reveal px-4 py-5 space-y-5 max-h-[70dvh] overflow-y-auto no-scrollbar">
+
+          {/* Sort by */}
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-white/30 uppercase tracking-widest">
+              Sort by
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {SORT_OPTIONS.map(opt => (
+                <button
+                  key={opt.key}
+                  onClick={() => handleSortChange(opt.key)}
+                  className={cn(
+                    'btn-spring-pill px-3.5 h-8 text-sm font-semibold',
+                    currentSort === opt.key
+                      ? 'bg-primary text-white shadow-md shadow-primary/30'
+                      : 'bg-white/8 text-white/50 hover:text-white hover:bg-white/15',
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Filter by */}
+          <div className="space-y-2 border-t border-white/8 pt-5">
+            <label className="text-xs font-bold text-white/30 uppercase tracking-widest">
+              Filter by
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {FILTER_OPTIONS.map(opt => (
+                <button
+                  key={opt.key}
+                  onClick={() => handleFilterChange(opt.key)}
+                  className={cn(
+                    'btn-spring-pill px-3.5 h-8 text-sm font-semibold',
+                    currentFilter === opt.key
+                      ? 'bg-primary text-white shadow-md shadow-primary/30'
+                      : 'bg-white/8 text-white/50 hover:text-white hover:bg-white/15',
+                  )}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* On complete, move task to */}
+          <div className="border-t border-white/8 pt-5 space-y-1">
             <label className="text-xs font-bold text-white/30 uppercase tracking-widest">
               On complete, move task to
             </label>

@@ -56,6 +56,7 @@ Drag-and-drop uses `@dnd-kit`. On mobile, dragging a card over a group tab navig
 - **Task details**: `TaskDetailsSheet` — markdown description, priority, color, tags, due date, subtasks, comments, group move.
 - **Search**: `SearchPanel` — filters todos across all groups in the active workspace.
 - **Group settings**: `onCompleteMoveTo` — when a todo is checked, it auto-moves to a configured target group.
+- **Group sort/filter**: `sortBy` and `filterBy` fields on `GroupSettings` (persisted). Applied view-side via `applyGroupView()` in `src/lib/todoView.ts`, consumed via `useMemo` in `ActiveGroupView` (mobile) and `GroupColumn` (desktop). DnD reorder is suppressed when a sort is active. UI: chip-selector rows in `GroupSettingsSheet`.
 
 ### UI / Styling
 

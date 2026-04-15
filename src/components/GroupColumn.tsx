@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Trash2, Settings, Plus } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { applyGroupView } from '@/lib/todoView';
 import { TodoCard } from '@/components/TodoCard';
 import { GroupSettingsSheet } from '@/components/GroupSettingsSheet';
 import { useAppStore } from '@/store/useAppStore';
@@ -30,6 +31,11 @@ export function GroupColumn({ group, allGroups, onAddTodo, onToggleTodo, onDelet
   const done = group.todos.filter(t => t.completed).length;
   const total = group.todos.length;
   const pct = total > 0 ? (done / total) * 100 : 0;
+
+  const visibleTodos = useMemo(
+    () => applyGroupView(group.todos, group.settings?.sortBy, group.settings?.filterBy),
+    [group.todos, group.settings?.sortBy, group.settings?.filterBy],
+  );
 
   function handleAddSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -90,7 +96,12 @@ export function GroupColumn({ group, allGroups, onAddTodo, onToggleTodo, onDelet
                 Drop todos here
               </div>
             )}
-            {group.todos.map((todo, i) => (
+            {group.todos.length > 0 && visibleTodos.length === 0 && (
+              <div className="flex items-center justify-center h-16 text-xs text-white/20">
+                No todos match the current filter
+              </div>
+            )}
+            {visibleTodos.map((todo, i) => (
               <TodoCard
                 key={todo.id}
                 todo={todo}

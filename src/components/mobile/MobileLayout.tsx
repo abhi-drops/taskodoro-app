@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { ChevronDown, Plus, Trash2, LayoutList, Settings, Timer, Search } from 'lucide-react';
@@ -7,6 +7,7 @@ import { TodoCard } from '@/components/TodoCard';
 import { WorkspaceSheet } from '@/components/mobile/WorkspaceSheet';
 import { GroupSettingsSheet } from '@/components/GroupSettingsSheet';
 import { useAppStore } from '@/store/useAppStore';
+import { applyGroupView } from '@/lib/todoView';
 import type { Workspace, Group } from '@/types/index';
 
 interface Props {
@@ -232,6 +233,11 @@ function ActiveGroupView({ group, allGroups, onToggleTodo, onDeleteTodo, onDelet
   const total = group.todos.length;
   const pct = total > 0 ? (done / total) * 100 : 0;
 
+  const visibleTodos = useMemo(
+    () => applyGroupView(group.todos, group.settings?.sortBy, group.settings?.filterBy),
+    [group.todos, group.settings?.sortBy, group.settings?.filterBy],
+  );
+
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* Group meta bar */}
@@ -279,8 +285,13 @@ function ActiveGroupView({ group, allGroups, onToggleTodo, onDeleteTodo, onDelet
               No todos yet — add one below
             </div>
           )}
+          {group.todos.length > 0 && visibleTodos.length === 0 && (
+            <div className="flex items-center justify-center h-32 text-sm text-white/25">
+              No todos match the current filter
+            </div>
+          )}
           <div className="flex flex-col gap-2 pt-1">
-            {group.todos.map((todo, i) => (
+            {visibleTodos.map((todo, i) => (
               <TodoCard
                 key={todo.id}
                 todo={todo}

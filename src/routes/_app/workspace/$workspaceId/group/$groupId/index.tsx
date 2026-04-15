@@ -179,13 +179,16 @@ function GroupRoute() {
     }
 
     if (sourceGroup.id === targetGroup.id) {
-      const oldIndex = sourceGroup.todos.findIndex(t => t.id === activeId)
-      const newIndex = sourceGroup.todos.findIndex(t => t.id === overId)
-      if (newIndex !== -1 && oldIndex !== newIndex) {
-        dispatch({
-          type: 'REORDER_TODO',
-          payload: { workspaceId, groupId: sourceGroup.id, activeIndex: oldIndex, overIndex: newIndex },
-        })
+      const sortIsActive = sourceGroup.settings?.sortBy && sourceGroup.settings.sortBy !== 'none';
+      if (!sortIsActive) {
+        const oldIndex = sourceGroup.todos.findIndex(t => t.id === activeId)
+        const newIndex = sourceGroup.todos.findIndex(t => t.id === overId)
+        if (newIndex !== -1 && oldIndex !== newIndex) {
+          dispatch({
+            type: 'REORDER_TODO',
+            payload: { workspaceId, groupId: sourceGroup.id, activeIndex: oldIndex, overIndex: newIndex },
+          })
+        }
       }
     } else {
       const overIndex = targetGroup.todos.findIndex(t => t.id === overId)
