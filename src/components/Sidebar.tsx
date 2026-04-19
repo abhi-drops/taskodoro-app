@@ -1,5 +1,6 @@
 import React from 'react';
-import { Plus, Trash2, X, Layers } from 'lucide-react';
+import { Plus, Trash2, X } from 'lucide-react';
+import appIcon from '@/assets/icon-new.png';
 import { cn } from '@/lib/utils';
 import type { Workspace } from '@/types/index';
 
@@ -45,10 +46,8 @@ export function Sidebar({
       >
         {/* Header */}
         <div className="flex items-center gap-2.5 px-4 h-14 shrink-0 border-b border-white/8">
-          <div className="w-7 h-7 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center shrink-0">
-            <Layers size={14} className="text-primary" />
-          </div>
-          <span className="font-bold text-sm text-white flex-1 tracking-tight">Workspaces</span>
+          <img src={appIcon} alt="Taskodoro" className="w-7 h-7 shrink-0" />
+          <span className="font-bold text-sm text-white flex-1 tracking-tight">Taskodoro</span>
           <button
             className="btn-spring-icon h-7 w-7 md:hidden flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10"
             onClick={onClose}
