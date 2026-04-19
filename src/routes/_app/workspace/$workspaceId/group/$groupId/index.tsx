@@ -38,7 +38,7 @@ export const Route = createFileRoute('/_app/workspace/$workspaceId/group/$groupI
 function GroupRoute() {
   const { workspaceId, groupId } = Route.useParams()
   const navigate = useNavigate()
-  const { state, dispatch } = useAppStore()
+  const { state, dispatch, isLoaded } = useAppStore()
   const isMobile = useIsMobile()
 
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -59,11 +59,12 @@ function GroupRoute() {
     }
   }, [workspaceId, activeWorkspace, state.activeWorkspaceId, dispatch])
 
-  // Redirect to root if workspace was deleted
+  // Redirect away only after state is confirmed loaded (avoids race on initial render)
   useEffect(() => {
-    if (!activeWorkspace && state.workspaces.length === 0) {
+    if (!isLoaded || activeWorkspace) return
+    if (state.workspaces.length === 0) {
       navigate({ to: '/', replace: true })
-    } else if (!activeWorkspace) {
+    } else {
       const ws = state.workspaces[0]
       const group = ws?.groups[0]
       if (ws && group) {
@@ -74,7 +75,7 @@ function GroupRoute() {
         navigate({ to: '/', replace: true })
       }
     }
-  }, [activeWorkspace, state.workspaces, navigate])
+  }, [isLoaded, activeWorkspace, state.workspaces, navigate])
 
   // Redirect if current group was deleted
   useEffect(() => {
@@ -346,7 +347,11 @@ function GroupRoute() {
       <CreateNameDialog
         open={newWorkspaceOpen}
         onOpenChange={setNewWorkspaceOpen}
-        onConfirm={name => dispatch({ type: 'ADD_WORKSPACE', payload: { name } })}
+        onConfirm={name => {
+          const newId = crypto.randomUUID()
+          dispatch({ type: 'ADD_WORKSPACE', payload: { name, id: newId } })
+          navigate({ to: '/workspace/$workspaceId', params: { workspaceId: newId } })
+        }}
         title="New Workspace"
         placeholder="Workspace name…"
       />

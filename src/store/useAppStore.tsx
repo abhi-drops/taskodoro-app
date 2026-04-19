@@ -13,7 +13,7 @@ const initialState: AppState = {
 
 export type AppAction =
   | { type: 'LOAD_STATE'; payload: AppState }
-  | { type: 'ADD_WORKSPACE'; payload: { name: string } }
+  | { type: 'ADD_WORKSPACE'; payload: { name: string; id?: string } }
   | { type: 'DELETE_WORKSPACE'; payload: { id: string } }
   | { type: 'SET_ACTIVE_WORKSPACE'; payload: { id: string } }
   | { type: 'RENAME_WORKSPACE'; payload: { id: string; name: string } }
@@ -55,14 +55,14 @@ function reducer(state: AppState, action: AppAction): AppState {
 
     case 'ADD_WORKSPACE': {
       const newWs: Workspace = {
-        id: crypto.randomUUID(),
+        id: action.payload.id ?? crypto.randomUUID(),
         name: action.payload.name,
         groups: [],
         createdAt: Date.now(),
       };
       return {
         workspaces: [...state.workspaces, newWs],
-        activeWorkspaceId: state.activeWorkspaceId ?? newWs.id,
+        activeWorkspaceId: newWs.id,
       };
     }
 

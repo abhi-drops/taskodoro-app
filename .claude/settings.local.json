@@ -7,7 +7,8 @@
       "Bash(npm create:*)",
       "Bash(npm run:*)",
       "Skill(claude-api)",
-      "Bash(npx cap:*)"
+      "Bash(npx cap:*)",
+      "Bash(npx tsc *)"
     ]
   }
 }

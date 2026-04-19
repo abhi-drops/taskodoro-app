@@ -46,7 +46,11 @@ function IndexRoute() {
       <CreateNameDialog
         open={newWorkspaceOpen}
         onOpenChange={setNewWorkspaceOpen}
-        onConfirm={name => dispatch({ type: 'ADD_WORKSPACE', payload: { name } })}
+        onConfirm={name => {
+          const newId = crypto.randomUUID()
+          dispatch({ type: 'ADD_WORKSPACE', payload: { name, id: newId } })
+          navigate({ to: '/workspace/$workspaceId', params: { workspaceId: newId } })
+        }}
         title="New Workspace"
         placeholder="Workspace name…"
       />
