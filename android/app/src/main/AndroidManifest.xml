@@ -33,10 +33,33 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!-- Pomodoro background timer service -->
+        <service
+            android:name=".PomodoroTimerService"
+            android:foregroundServiceType="specialUse"
+            android:exported="false"
+            android:stopWithTask="false" />
+
+        <!-- Handles notification action button taps -->
+        <receiver
+            android:name=".PomodoroActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.example.todoapp.action.NOTIF_PAUSE" />
+                <action android:name="com.example.todoapp.action.NOTIF_RESUME" />
+                <action android:name="com.example.todoapp.action.NOTIF_ADD_FIVE" />
+                <action android:name="com.example.todoapp.action.NOTIF_NEXT" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
     <!-- Permissions -->
-
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
 </manifest>

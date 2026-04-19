@@ -68,6 +68,7 @@ Drag-and-drop uses `@dnd-kit`. On mobile, dragging a card over a group tab navig
 ### Features
 
 - **Pomodoro**: `PomodoroPlanner` builds a block schedule from workspace todos; `PomodoroTimer` runs it. `M3LinearProgress` (`src/components/pomodoro/M3LinearProgress.tsx`) is a custom animated SVG wavy progress bar — amplitude springs to 0 when paused and bounces back on resume (M3 expressive spring: ζ=0.55, ω₀=18). Uses `@material/web` for M3 web components. Alarm sound uses a custom Capacitor plugin (`src/plugins/AlarmSound.ts`) bridging to native Android.
+  - **Background timer (Android)**: When running on Android, `PomodoroTimer` starts a native Android Foreground Service (`PomodoroTimerService.java`) that keeps ticking even when the app is minimized. A persistent notification in the status bar shows the current block label, live MM:SS countdown, a progress bar, and action buttons (Pause/Resume, +5 min, Next). Notification button taps are handled by `PomodoroActionReceiver.java` (BroadcastReceiver). The Capacitor bridge plugin is `PomodoroTimerPlugin.java` (TS side: `src/plugins/PomodoroTimer.ts`). React re-syncs from native state on foreground re-entry via `App.addListener('appStateChange')` + `getState()`. Native service is the source of truth in background; React is in foreground.
 - **Task details**: `TaskDetailsSheet` — markdown description (via `MarkdownEditor`), priority, color, tags, due date, subtasks, comments, group move.
 - **Markdown editor**: `MarkdownEditor` (`src/components/MarkdownEditor.tsx`) — inline rich-text editor with toolbar (H1, H2, bold, italic, list). Converts between markdown syntax and plain-line display.
 - **Countdown**: `useCountdown` (`src/hooks/useCountdown.ts`) — hook that ticks every second, returns `{ days, hours, minutes, seconds, isOverdue, isExpiringSoon }` from a `endTime` timestamp. Used by `TodoCard` for due-date display.
@@ -102,6 +103,7 @@ Design system is documented in `style.md`. Key rules:
 | `@material/web` | M3 web components (pomodoro progress bar) |
 | `@base-ui/react` | Headless UI primitives for shadcn components |
 | `@capacitor-community/native-audio` | Available but alarm bridged via custom `AlarmSound` plugin |
+| `@capacitor/app` | Android back button + `appStateChange` for foreground re-sync |
 | `tailwindcss` v4 | CSS-first config |
 | `lucide-react` | Icons |
 

@@ -1,10 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, RotateCcw, Pause, Play, Plus, Check, Coffee, Zap, SkipForward } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+import { App } from '@capacitor/app';
 import { cn } from '@/lib/utils';
 import type { PomodoroBlock } from '@/types/pomodoro';
 import type { AppAction } from '@/store/useAppStore';
 import { M3LinearProgress } from './M3LinearProgress';
 import { AlarmSound } from '@/plugins/AlarmSound';
+import { PomodoroNative } from '@/plugins/PomodoroTimer';
+import type { PomodoroState, PomodoroEvent } from '@/plugins/PomodoroTimer';
 
 interface Props {
   blocks: PomodoroBlock[];
@@ -36,6 +40,8 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
   const [showNextConfirm, setShowNextConfirm] = useState(false);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const alarmFiredRef = useRef(false);
+  const isAndroid = Capacitor.getPlatform() === 'android';
+  const nativeActiveRef = useRef(false);
 
   const block = blocks[blockIdx] ?? null;
   const totalBlocks = blocks.length;
@@ -82,6 +88,90 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
     alarmFiredRef.current = false;
   }, [blockIdx]);
 
+  // ── Android Foreground Service integration ──────────────────────────────
+
+  // Start native service on mount; stop it when timer closes
+  useEffect(() => {
+    if (!isAndroid) return;
+    PomodoroNative.requestNotificationPermission().catch(() => {});
+    PomodoroNative.start({
+      blocks: initialBlocks.map(b => ({
+        id: b.id, type: b.type, label: b.label, durationMins: b.durationMins,
+        taskId: b.taskId, groupId: b.groupId, completed: b.completed,
+      })),
+      blockIdx: 0,
+      timeLeftSeconds: (initialBlocks[0]?.durationMins ?? 0) * 60,
+    }).catch(console.error);
+    nativeActiveRef.current = true;
+    return () => {
+      if (nativeActiveRef.current) {
+        PomodoroNative.stop().catch(() => {});
+        nativeActiveRef.current = false;
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Listen for events fired by native service (notification buttons, expiry)
+  useEffect(() => {
+    if (!isAndroid) return;
+    const p = PomodoroNative.addListener('timerEvent', (event: PomodoroEvent) => {
+      switch (event.eventType) {
+        case 'blockExpired':
+          if (!alarmFiredRef.current) { alarmFiredRef.current = true; playAlarmLoop(); }
+          setExpired(true);
+          setIsRunning(false);
+          break;
+        case 'blockAdvanced':
+          stopAlarm();
+          if (event.blockIdx !== undefined) {
+            setBlockIdx(event.blockIdx);
+            setTimeLeft((blocks[event.blockIdx]?.durationMins ?? 0) * 60);
+          }
+          setIsRunning(true);
+          setExpired(false);
+          break;
+        case 'sessionEnded':
+          stopAlarm();
+          nativeActiveRef.current = false;
+          onClose();
+          break;
+        case 'pauseChanged':
+          setIsRunning(event.isRunning ?? false);
+          break;
+        case 'addedFive':
+          stopAlarm();
+          setExpired(false);
+          setTimeLeft(t => t + 300);
+          setIsRunning(true);
+          break;
+      }
+    });
+    return () => { p.then(h => h.remove()); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blocks, onClose]);
+
+  // Re-sync React state from native when app returns to foreground
+  useEffect(() => {
+    if (!isAndroid) return;
+    const p = App.addListener('appStateChange', ({ isActive }: { isActive: boolean }) => {
+      if (isActive && nativeActiveRef.current) {
+        PomodoroNative.getState().then((s: PomodoroState) => {
+          if (s.blockIdx !== blockIdx) setBlockIdx(s.blockIdx);
+          setTimeLeft(s.timeLeftSeconds);
+          setIsRunning(s.isRunning);
+          if (s.isExpired && !alarmFiredRef.current) {
+            alarmFiredRef.current = true;
+            playAlarmLoop();
+          }
+          if (!s.isExpired) setExpired(false);
+        }).catch(() => {});
+      }
+    });
+    return () => { p.then(h => h.remove()); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blockIdx, isAndroid]);
+
   const goToBlock = useCallback((idx: number) => {
     if (idx < 0 || idx >= blocks.length) return;
     stopAlarm();
@@ -90,7 +180,10 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
     setIsRunning(true);
     setExpired(false);
     setShowNextConfirm(false);
-  }, [blocks]);
+    if (isAndroid && nativeActiveRef.current) {
+      PomodoroNative.nextBlock().catch(() => {});
+    }
+  }, [blocks, isAndroid]);
 
   function handleAddFive() {
     stopAlarm();
@@ -98,6 +191,9 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
     if (expired) {
       setExpired(false);
       setIsRunning(true);
+    }
+    if (isAndroid && nativeActiveRef.current) {
+      PomodoroNative.addFive().catch(() => {});
     }
   }
 
@@ -118,7 +214,14 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
       setTimeLeft(updated[nextIdx].durationMins * 60);
       setIsRunning(true);
       setExpired(false);
+      if (isAndroid && nativeActiveRef.current) {
+        PomodoroNative.nextBlock().catch(() => {});
+      }
     } else {
+      if (isAndroid && nativeActiveRef.current) {
+        PomodoroNative.stop().catch(() => {});
+        nativeActiveRef.current = false;
+      }
       onClose();
     }
   }
@@ -127,6 +230,10 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
     if (blockIdx + 1 < blocks.length) {
       goToBlock(blockIdx + 1);
     } else {
+      if (isAndroid && nativeActiveRef.current) {
+        PomodoroNative.stop().catch(() => {});
+        nativeActiveRef.current = false;
+      }
       onClose();
     }
   }
@@ -148,6 +255,19 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
     setIsRunning(true);
     setExpired(false);
     setShowNextConfirm(false);
+    if (isAndroid && nativeActiveRef.current) {
+      PomodoroNative.stop().catch(() => {});
+      setTimeout(() => {
+        PomodoroNative.start({
+          blocks: reset.map(b => ({
+            id: b.id, type: b.type, label: b.label, durationMins: b.durationMins,
+            taskId: b.taskId, groupId: b.groupId, completed: b.completed,
+          })),
+          blockIdx: 0,
+          timeLeftSeconds: (reset[0]?.durationMins ?? 0) * 60,
+        }).catch(() => {});
+      }, 100);
+    }
   }
 
   function handleChecklistToggle(b: PomodoroBlock) {
@@ -178,7 +298,14 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-3 shrink-0">
         <button
-          onClick={() => { stopAlarm(); onClose(); }}
+          onClick={() => {
+            stopAlarm();
+            if (isAndroid && nativeActiveRef.current) {
+              PomodoroNative.stop().catch(() => {});
+              nativeActiveRef.current = false;
+            }
+            onClose();
+          }}
           className="btn-spring-icon w-10 h-10 flex items-center justify-center bg-white/10 text-white/60 hover:text-white hover:bg-white/20"
           aria-label="Close timer"
         >
@@ -257,7 +384,13 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
         {/* Controls */}
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setIsRunning(r => !r)}
+            onClick={() => {
+              const next = !isRunning;
+              setIsRunning(next);
+              if (isAndroid && nativeActiveRef.current) {
+                (next ? PomodoroNative.resume() : PomodoroNative.pause()).catch(() => {});
+              }
+            }}
             disabled={expired}
             className={cn(
               'btn-spring flex items-center justify-center',
@@ -377,7 +510,14 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
               {blockIdx + 1 < blocks.length ? 'Next block →' : 'Finish session'}
             </button>
             <button
-              onClick={onClose}
+              onClick={() => {
+                stopAlarm();
+                if (isAndroid && nativeActiveRef.current) {
+                  PomodoroNative.stop().catch(() => {});
+                  nativeActiveRef.current = false;
+                }
+                onClose();
+              }}
               className="btn-spring h-11 text-white/40 font-medium hover:text-white/60"
             >
               Close timer
