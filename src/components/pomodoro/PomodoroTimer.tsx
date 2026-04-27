@@ -42,6 +42,14 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
   const alarmFiredRef = useRef(false);
   const isAndroid = Capacitor.getPlatform() === 'android';
   const nativeActiveRef = useRef(false);
+  // Refs so native listener callbacks always see current values without re-registering
+  const blocksRef = useRef(blocks);
+  const blockIdxRef = useRef(blockIdx);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => { blocksRef.current = blocks; }, [blocks]);
+  useEffect(() => { blockIdxRef.current = blockIdx; }, [blockIdx]);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
 
   const block = blocks[blockIdx] ?? null;
   const totalBlocks = blocks.length;
@@ -112,7 +120,8 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Listen for events fired by native service (notification buttons, expiry)
+  // Listen for events fired by native service (notification buttons, expiry).
+  // Registered once on mount — reads blocks/onClose via refs to avoid re-registering.
   useEffect(() => {
     if (!isAndroid) return;
     const p = PomodoroNative.addListener('timerEvent', (event: PomodoroEvent) => {
@@ -126,7 +135,7 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
           stopAlarm();
           if (event.blockIdx !== undefined) {
             setBlockIdx(event.blockIdx);
-            setTimeLeft((blocks[event.blockIdx]?.durationMins ?? 0) * 60);
+            setTimeLeft((blocksRef.current[event.blockIdx]?.durationMins ?? 0) * 60);
           }
           setIsRunning(true);
           setExpired(false);
@@ -134,7 +143,7 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
         case 'sessionEnded':
           stopAlarm();
           nativeActiveRef.current = false;
-          onClose();
+          onCloseRef.current();
           break;
         case 'pauseChanged':
           setIsRunning(event.isRunning ?? false);
@@ -149,15 +158,16 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
     });
     return () => { p.then(h => h.remove()); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [blocks, onClose]);
+  }, [isAndroid]);
 
-  // Re-sync React state from native when app returns to foreground
+  // Re-sync React state from native when app returns to foreground.
+  // Registered once — reads blockIdx via ref to avoid re-registering on every block advance.
   useEffect(() => {
     if (!isAndroid) return;
     const p = App.addListener('appStateChange', ({ isActive }: { isActive: boolean }) => {
       if (isActive && nativeActiveRef.current) {
         PomodoroNative.getState().then((s: PomodoroState) => {
-          if (s.blockIdx !== blockIdx) setBlockIdx(s.blockIdx);
+          if (s.blockIdx !== blockIdxRef.current) setBlockIdx(s.blockIdx);
           setTimeLeft(s.timeLeftSeconds);
           setIsRunning(s.isRunning);
           if (s.isExpired && !alarmFiredRef.current) {
@@ -170,7 +180,7 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
     });
     return () => { p.then(h => h.remove()); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [blockIdx, isAndroid]);
+  }, [isAndroid]);
 
   const goToBlock = useCallback((idx: number) => {
     if (idx < 0 || idx >= blocks.length) return;

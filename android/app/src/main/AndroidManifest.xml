@@ -39,7 +39,7 @@
             android:name=".PomodoroTimerService"
             android:foregroundServiceType="specialUse"
             android:exported="false"
-            android:stopWithTask="false" />
+            android:stopWithTask="true" />
 
         <!-- Handles notification action button taps -->
         <receiver

@@ -38,8 +38,12 @@ public class PomodoroTimerPlugin extends Plugin {
 
     @Override
     public void handleOnResume() {
-        // App came to foreground — ask service for a fresh state broadcast
-        sendServiceIntent(PomodoroTimerService.ACTION_SYNC_REQUEST);
+        // Ask service for a fresh state broadcast only if it's already running.
+        // Use plain startService (not startForegroundService) so Android doesn't
+        // require startForeground() to be called — this intent is fire-and-forget.
+        if (PomodoroTimerService.lastKnownState != null) {
+            sendControlIntent(PomodoroTimerService.ACTION_SYNC_REQUEST);
+        }
     }
 
     // ── Plugin methods ───────────────────────────────────────────────────────
@@ -66,31 +70,31 @@ public class PomodoroTimerPlugin extends Plugin {
 
     @PluginMethod
     public void pause(PluginCall call) {
-        sendServiceIntent(PomodoroTimerService.ACTION_PAUSE);
+        sendControlIntent(PomodoroTimerService.ACTION_PAUSE);
         call.resolve();
     }
 
     @PluginMethod
     public void resume(PluginCall call) {
-        sendServiceIntent(PomodoroTimerService.ACTION_RESUME);
+        sendControlIntent(PomodoroTimerService.ACTION_RESUME);
         call.resolve();
     }
 
     @PluginMethod
     public void addFive(PluginCall call) {
-        sendServiceIntent(PomodoroTimerService.ACTION_ADD_FIVE);
+        sendControlIntent(PomodoroTimerService.ACTION_ADD_FIVE);
         call.resolve();
     }
 
     @PluginMethod
     public void nextBlock(PluginCall call) {
-        sendServiceIntent(PomodoroTimerService.ACTION_NEXT_BLOCK);
+        sendControlIntent(PomodoroTimerService.ACTION_NEXT_BLOCK);
         call.resolve();
     }
 
     @PluginMethod
     public void stop(PluginCall call) {
-        sendServiceIntent(PomodoroTimerService.ACTION_STOP);
+        sendControlIntent(PomodoroTimerService.ACTION_STOP);
         call.resolve();
     }
 
@@ -178,9 +182,21 @@ public class PomodoroTimerPlugin extends Plugin {
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
+    // Used only for ACTION_START — must use startForegroundService so the service
+    // can call startForeground() and show the persistent notification.
     private void sendServiceIntent(String action) {
         Intent intent = new Intent(getContext(), PomodoroTimerService.class);
         intent.setAction(action);
         ContextCompat.startForegroundService(getContext(), intent);
+    }
+
+    // Used for all control actions (PAUSE, RESUME, STOP, NEXT, ADD_FIVE, SYNC_REQUEST).
+    // Plain startService — does NOT require startForeground(), so it's safe to call
+    // even when the service is already running in the foreground. If the service isn't
+    // running, Android silently ignores it, which is the correct behaviour.
+    private void sendControlIntent(String action) {
+        Intent intent = new Intent(getContext(), PomodoroTimerService.class);
+        intent.setAction(action);
+        getContext().startService(intent);
     }
 }

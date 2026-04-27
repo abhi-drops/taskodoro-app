@@ -91,7 +91,7 @@ public class PomodoroTimerService extends Service {
         if (intent == null || intent.getAction() == null) return START_STICKY;
 
         switch (intent.getAction()) {
-            case ACTION_START:        handleStart(intent);    break;
+            case ACTION_START:        handleStart(intent);    return START_STICKY;
             case ACTION_PAUSE:        handlePause();          break;
             case ACTION_RESUME:       handleResume();         break;
             case ACTION_ADD_FIVE:     handleAddFive();        break;
@@ -99,7 +99,8 @@ public class PomodoroTimerService extends Service {
             case ACTION_STOP:         handleStop();           break;
             case ACTION_SYNC_REQUEST: broadcastState();       break;
         }
-        return START_STICKY;
+        // Control intents: don't ask Android to restart the service if it dies
+        return START_NOT_STICKY;
     }
 
     @Override
@@ -108,6 +109,7 @@ public class PomodoroTimerService extends Service {
     @Override
     public void onDestroy() {
         stopTick();
+        lastKnownState = null;
         super.onDestroy();
     }
 
@@ -242,7 +244,6 @@ public class PomodoroTimerService extends Service {
 
                 updateSnapshot();
                 updateNotification();
-                broadcastState();
                 tickHandler.postDelayed(this, 1000);
             }
         };
