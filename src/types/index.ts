@@ -25,15 +25,17 @@ export interface Todo {
   comments?: TaskComment[];
   endTime?: number;
   subtasks?: SubTask[];
+  lastGroupId?: string;
 }
 
-export type TodoSortKey = 'none' | 'priority' | 'dueDate' | 'createdAt' | 'alpha' | 'completedLast';
-export type TodoFilterKey = 'all' | 'incomplete' | 'completed';
+export type TodoSortKey = 'none' | 'priority' | 'dueDate' | 'createdAt' | 'alpha' | 'completedLast' | 'lastGroup';
+export type TodoFilterKey = 'all' | 'incomplete' | 'completed' | 'lastGroup';
 
 export interface GroupSettings {
   onCompleteMoveTo?: string | null;
   sortBy?: TodoSortKey;
   filterBy?: TodoFilterKey;
+  filterByLastGroup?: string | null;
 }
 
 export interface Group {

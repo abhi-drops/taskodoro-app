@@ -4,7 +4,7 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { Trash2, Settings, Plus } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { applyGroupView } from '@/lib/todoView';
+import { applyGroupView, groupByLastGroup } from '@/lib/todoView';
 import { TodoCard } from '@/components/TodoCard';
 import { GroupSettingsSheet } from '@/components/GroupSettingsSheet';
 import { useAppStore } from '@/store/useAppStore';
@@ -32,9 +32,16 @@ export function GroupColumn({ group, allGroups, onAddTodo, onToggleTodo, onDelet
   const total = group.todos.length;
   const pct = total > 0 ? (done / total) * 100 : 0;
 
+  const sortBy = group.settings?.sortBy ?? 'none';
+
   const visibleTodos = useMemo(
-    () => applyGroupView(group.todos, group.settings?.sortBy, group.settings?.filterBy),
-    [group.todos, group.settings?.sortBy, group.settings?.filterBy],
+    () => applyGroupView(group.todos, group.settings?.sortBy, group.settings?.filterBy, group.settings?.filterByLastGroup ?? undefined),
+    [group.todos, group.settings?.sortBy, group.settings?.filterBy, group.settings?.filterByLastGroup],
+  );
+
+  const lastGroupSections = useMemo(
+    () => sortBy === 'lastGroup' ? groupByLastGroup(visibleTodos, allGroups) : null,
+    [sortBy, visibleTodos, allGroups],
   );
 
   function handleAddSubmit(e: React.FormEvent) {
@@ -101,16 +108,38 @@ export function GroupColumn({ group, allGroups, onAddTodo, onToggleTodo, onDelet
                 No todos match the current filter
               </div>
             )}
-            {visibleTodos.map((todo, i) => (
-              <TodoCard
-                key={todo.id}
-                todo={todo}
-                index={i}
-                onToggle={() => onToggleTodo(todo.id)}
-                onDelete={() => onDeleteTodo(todo.id)}
-                onOpen={() => onOpenTask(todo.id)}
-              />
-            ))}
+            {lastGroupSections
+              ? lastGroupSections.map(section => (
+                  <div key={section.label}>
+                    <div className="flex items-center gap-2 px-1 pt-2 pb-1">
+                      <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest truncate">
+                        {section.label}
+                      </span>
+                      <div className="flex-1 h-px bg-white/8" />
+                    </div>
+                    {section.todos.map((todo, i) => (
+                      <TodoCard
+                        key={todo.id}
+                        todo={todo}
+                        index={i}
+                        onToggle={() => onToggleTodo(todo.id)}
+                        onDelete={() => onDeleteTodo(todo.id)}
+                        onOpen={() => onOpenTask(todo.id)}
+                      />
+                    ))}
+                  </div>
+                ))
+              : visibleTodos.map((todo, i) => (
+                  <TodoCard
+                    key={todo.id}
+                    todo={todo}
+                    index={i}
+                    onToggle={() => onToggleTodo(todo.id)}
+                    onDelete={() => onDeleteTodo(todo.id)}
+                    onOpen={() => onOpenTask(todo.id)}
+                  />
+                ))
+            }
           </div>
         </SortableContext>
       </ScrollArea>

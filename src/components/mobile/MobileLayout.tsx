@@ -7,7 +7,7 @@ import { TodoCard } from '@/components/TodoCard';
 import { WorkspaceSheet } from '@/components/mobile/WorkspaceSheet';
 import { GroupSettingsSheet } from '@/components/GroupSettingsSheet';
 import { useAppStore } from '@/store/useAppStore';
-import { applyGroupView } from '@/lib/todoView';
+import { applyGroupView, groupByLastGroup } from '@/lib/todoView';
 import type { Workspace, Group } from '@/types/index';
 
 interface Props {
@@ -233,9 +233,16 @@ function ActiveGroupView({ group, allGroups, onToggleTodo, onDeleteTodo, onDelet
   const total = group.todos.length;
   const pct = total > 0 ? (done / total) * 100 : 0;
 
+  const sortBy = group.settings?.sortBy ?? 'none';
+
   const visibleTodos = useMemo(
-    () => applyGroupView(group.todos, group.settings?.sortBy, group.settings?.filterBy),
-    [group.todos, group.settings?.sortBy, group.settings?.filterBy],
+    () => applyGroupView(group.todos, group.settings?.sortBy, group.settings?.filterBy, group.settings?.filterByLastGroup ?? undefined),
+    [group.todos, group.settings?.sortBy, group.settings?.filterBy, group.settings?.filterByLastGroup],
+  );
+
+  const lastGroupSections = useMemo(
+    () => sortBy === 'lastGroup' ? groupByLastGroup(visibleTodos, allGroups) : null,
+    [sortBy, visibleTodos, allGroups],
   );
 
   return (
@@ -291,16 +298,38 @@ function ActiveGroupView({ group, allGroups, onToggleTodo, onDeleteTodo, onDelet
             </div>
           )}
           <div className="flex flex-col gap-2 pt-1">
-            {visibleTodos.map((todo, i) => (
-              <TodoCard
-                key={todo.id}
-                todo={todo}
-                index={i}
-                onToggle={() => onToggleTodo(todo.id)}
-                onDelete={() => onDeleteTodo(todo.id)}
-                onOpen={() => onOpenTask(todo.id)}
-              />
-            ))}
+            {lastGroupSections
+              ? lastGroupSections.map(section => (
+                  <div key={section.label}>
+                    <div className="flex items-center gap-2 px-1 pt-2 pb-1">
+                      <span className="text-[10px] font-bold text-white/30 uppercase tracking-widest truncate">
+                        {section.label}
+                      </span>
+                      <div className="flex-1 h-px bg-white/8" />
+                    </div>
+                    {section.todos.map((todo, i) => (
+                      <TodoCard
+                        key={todo.id}
+                        todo={todo}
+                        index={i}
+                        onToggle={() => onToggleTodo(todo.id)}
+                        onDelete={() => onDeleteTodo(todo.id)}
+                        onOpen={() => onOpenTask(todo.id)}
+                      />
+                    ))}
+                  </div>
+                ))
+              : visibleTodos.map((todo, i) => (
+                  <TodoCard
+                    key={todo.id}
+                    todo={todo}
+                    index={i}
+                    onToggle={() => onToggleTodo(todo.id)}
+                    onDelete={() => onDeleteTodo(todo.id)}
+                    onOpen={() => onOpenTask(todo.id)}
+                  />
+                ))
+            }
           </div>
         </SortableContext>
       </div>

@@ -20,6 +20,7 @@ const SORT_OPTIONS: { key: TodoSortKey; label: string }[] = [
   { key: 'dueDate',       label: 'Due date' },
   { key: 'createdAt',     label: 'Created' },
   { key: 'alpha',         label: 'A → Z' },
+  { key: 'lastGroup',     label: 'Last group' },
 ];
 
 const FILTER_OPTIONS: { key: TodoFilterKey; label: string }[] = [
@@ -33,6 +34,7 @@ export function GroupSettingsSheet({ group, allGroups, workspaceId, onClose, dis
   const currentTarget = group.settings?.onCompleteMoveTo ?? '';
   const currentSort = group.settings?.sortBy ?? 'none';
   const currentFilter = group.settings?.filterBy ?? 'all';
+  const currentFilterByLastGroup = group.settings?.filterByLastGroup ?? '';
 
   function handleMoveTargetChange(value: string) {
     const settings: GroupSettings = {
@@ -47,6 +49,14 @@ export function GroupSettingsSheet({ group, allGroups, workspaceId, onClose, dis
 
   function handleFilterChange(key: TodoFilterKey) {
     dispatch({ type: 'UPDATE_GROUP_SETTINGS', payload: { workspaceId, groupId: group.id, settings: { filterBy: key } } });
+  }
+
+  function handleLastGroupFilterChange(value: string) {
+    if (value === '') {
+      dispatch({ type: 'UPDATE_GROUP_SETTINGS', payload: { workspaceId, groupId: group.id, settings: { filterBy: 'all', filterByLastGroup: null } } });
+    } else {
+      dispatch({ type: 'UPDATE_GROUP_SETTINGS', payload: { workspaceId, groupId: group.id, settings: { filterBy: 'lastGroup', filterByLastGroup: value } } });
+    }
   }
 
   return (
@@ -140,6 +150,27 @@ export function GroupSettingsSheet({ group, allGroups, workspaceId, onClose, dis
               ))}
             </div>
           </div>
+
+          {/* Filter by last group */}
+          <div className="border-t border-white/8 pt-5 space-y-1">
+            <label className="text-xs font-bold text-white/30 uppercase tracking-widest">
+              Filter by last group
+            </label>
+            <p className="text-xs text-white/30">
+              Show only tasks that were moved here from a specific group.
+            </p>
+          </div>
+          <select
+            value={currentFilterByLastGroup}
+            onChange={e => handleLastGroupFilterChange(e.target.value)}
+            className="w-full h-12 rounded-2xl border border-white/10 bg-white/6 px-4 text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary/40"
+            style={{ colorScheme: 'dark' }}
+          >
+            <option value="">None</option>
+            {otherGroups.map(g => (
+              <option key={g.id} value={g.id}>{g.name}</option>
+            ))}
+          </select>
 
           {/* On complete, move task to */}
           <div className="border-t border-white/8 pt-5 space-y-1">

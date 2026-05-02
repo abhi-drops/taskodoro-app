@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
-import { Search, X, SlidersHorizontal, Clock, Tag, CheckCircle2, Circle, Calendar } from 'lucide-react';
+import { Search, X, SlidersHorizontal, Clock, Tag, CheckCircle2, Circle, Calendar, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Workspace, Todo, Group } from '@/types/index';
 
@@ -65,6 +65,7 @@ export function SearchPanel({ workspace, onOpenTask, onClose, isMobile }: Props)
   const [query, setQuery] = useState('');
   const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
   const [selectedColors, setSelectedColors] = useState<Set<string>>(new Set());
+  const [selectedGroups, setSelectedGroups] = useState<Set<string>>(new Set());
   const [completionFilter, setCompletionFilter] = useState<CompletionFilter>('all');
   const [dateFilter, setDateFilter] = useState<DateFilter>('all');
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -89,6 +90,11 @@ export function SearchPanel({ workspace, onOpenTask, onClose, isMobile }: Props)
     return Array.from(tags).sort();
   }, [workspace]);
 
+  const searchableGroups = useMemo(
+    () => workspace.groups.filter(g => g.todos.length > 0),
+    [workspace.groups],
+  );
+
   const allColors = useMemo(() => {
     const colors = new Set<string>();
     for (const g of workspace.groups)
@@ -101,10 +107,11 @@ export function SearchPanel({ workspace, onOpenTask, onClose, isMobile }: Props)
     let n = 0;
     if (selectedTags.size) n += selectedTags.size;
     if (selectedColors.size) n += selectedColors.size;
+    if (selectedGroups.size) n += selectedGroups.size;
     if (completionFilter !== 'all') n++;
     if (dateFilter !== 'all') n++;
     return n;
-  }, [selectedTags, selectedColors, completionFilter, dateFilter]);
+  }, [selectedTags, selectedColors, selectedGroups, completionFilter, dateFilter]);
 
   const hasAnyFilter = activeFilterCount > 0 || query.trim() !== '';
 
@@ -113,6 +120,7 @@ export function SearchPanel({ workspace, onOpenTask, onClose, isMobile }: Props)
     const q = query.trim().toLowerCase();
     const items: ResultItem[] = [];
     for (const group of workspace.groups) {
+      if (selectedGroups.size > 0 && !selectedGroups.has(group.id)) continue;
       for (const todo of group.todos) {
         if (q) {
           const searchable = [todo.text, todo.description ?? '', ...(todo.comments ?? []).map(c => c.text)].join(' ').toLowerCase();
@@ -137,7 +145,7 @@ export function SearchPanel({ workspace, onOpenTask, onClose, isMobile }: Props)
       }
     }
     return items;
-  }, [workspace, query, selectedTags, selectedColors, completionFilter, dateFilter]);
+  }, [workspace, query, selectedTags, selectedColors, selectedGroups, completionFilter, dateFilter]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, { group: Group; todos: Todo[] }>();
@@ -154,9 +162,12 @@ export function SearchPanel({ workspace, onOpenTask, onClose, isMobile }: Props)
   function toggleColor(hex: string) {
     setSelectedColors(prev => { const next = new Set(prev); next.has(hex) ? next.delete(hex) : next.add(hex); return next; });
   }
+  function toggleGroup(id: string) {
+    setSelectedGroups(prev => { const next = new Set(prev); next.has(id) ? next.delete(id) : next.add(id); return next; });
+  }
   function clearAll() {
     setQuery(''); setSelectedTags(new Set()); setSelectedColors(new Set());
-    setCompletionFilter('all'); setDateFilter('all');
+    setSelectedGroups(new Set()); setCompletionFilter('all'); setDateFilter('all');
   }
 
   const DATE_OPTIONS: { value: DateFilter; label: string }[] = [
@@ -309,6 +320,32 @@ export function SearchPanel({ workspace, onOpenTask, onClose, isMobile }: Props)
               ))}
             </div>
           </div>
+
+          {/* Groups */}
+          {searchableGroups.length > 1 && (
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-white/30 uppercase tracking-widest">
+                <Layers size={11} /> Groups
+              </div>
+              <div className="flex gap-1.5 flex-wrap">
+                {searchableGroups.map(g => (
+                  <button
+                    key={g.id}
+                    onClick={() => toggleGroup(g.id)}
+                    aria-pressed={selectedGroups.has(g.id)}
+                    className={cn(
+                      'h-7 px-2.5 rounded-full text-xs font-semibold transition-all active:scale-95',
+                      selectedGroups.has(g.id)
+                        ? 'bg-primary text-white shadow-sm'
+                        : 'bg-white/8 text-white/40 hover:text-white border border-white/8',
+                    )}
+                  >
+                    {g.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Colors */}
           {allColors.length > 0 && (

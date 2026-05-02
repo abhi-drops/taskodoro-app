@@ -72,9 +72,10 @@ Drag-and-drop uses `@dnd-kit`. On mobile, dragging a card over a group tab navig
 - **Task details**: `TaskDetailsSheet` — markdown description (via `MarkdownEditor`), priority, color, tags, due date, subtasks, comments, group move.
 - **Markdown editor**: `MarkdownEditor` (`src/components/MarkdownEditor.tsx`) — inline rich-text editor with toolbar (H1, H2, bold, italic, list). Converts between markdown syntax and plain-line display.
 - **Countdown**: `useCountdown` (`src/hooks/useCountdown.ts`) — hook that ticks every second, returns `{ days, hours, minutes, seconds, isOverdue, isExpiringSoon }` from a `endTime` timestamp. Used by `TodoCard` for due-date display.
-- **Search**: `SearchPanel` — filters todos across all groups in the active workspace.
+- **Search**: `SearchPanel` — filters todos across all groups in the active workspace. Filter panel includes: Status, Due Date, Groups (pill chips to narrow to specific groups; shown only when >1 group has todos), Color, Tags.
 - **Group settings**: `onCompleteMoveTo` — when a todo is checked, it auto-moves to a configured target group.
 - **Group sort/filter**: `sortBy` and `filterBy` fields on `GroupSettings` (persisted). Applied view-side via `applyGroupView()` in `src/lib/todoView.ts`, consumed via `useMemo` in `ActiveGroupView` (mobile) and `GroupColumn` (desktop). DnD reorder is suppressed when a sort is active. UI: chip-selector rows in `GroupSettingsSheet`.
+  - `filterBy: 'lastGroup'` — special filter that shows only todos whose `lastGroupId` matches `GroupSettings.filterByLastGroup`. Set via the "Filter by last group" dropdown in `GroupSettingsSheet`. `lastGroupId` is stamped on a todo whenever it is moved between groups (via `MOVE_TODO`) or auto-moved on completion (via `TOGGLE_TODO`'s `onCompleteMoveTo` branch).
 
 ### UI / Styling
 

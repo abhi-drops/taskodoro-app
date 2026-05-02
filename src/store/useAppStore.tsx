@@ -138,7 +138,7 @@ function reducer(state: AppState, action: AppAction): AppState {
           ...ws,
           groups: ws.groups.map(g => {
             if (g.id === groupId) return { ...g, todos: g.todos.filter(t => t.id !== todoId) };
-            if (g.id === targetGroupId) return { ...g, todos: [...g.todos, { ...todo, completed: false }] };
+            if (g.id === targetGroupId) return { ...g, todos: [...g.todos, { ...todo, completed: false, lastGroupId: groupId }] };
             return g;
           }),
         }));
@@ -170,7 +170,7 @@ function reducer(state: AppState, action: AppAction): AppState {
             if (g.id === toGroupId) {
               const newTodos = [...g.todos];
               const insertAt = overIndex !== undefined && overIndex >= 0 ? overIndex : newTodos.length;
-              newTodos.splice(insertAt, 0, todo);
+              newTodos.splice(insertAt, 0, { ...todo, lastGroupId: fromGroupId });
               return { ...g, todos: newTodos };
             }
             return g;
