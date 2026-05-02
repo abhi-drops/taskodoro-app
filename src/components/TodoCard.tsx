@@ -2,6 +2,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, X, Clock, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAppStore } from '@/store/useAppStore';
 import type { Todo, TaskPriority } from '@/types/index';
 
 const PRIORITY_BAR: Record<TaskPriority, string> = {
@@ -62,6 +63,9 @@ interface Props {
 }
 
 export function TodoCard({ todo, onToggle, onDelete, onOpen, isDragOverlay = false, index = 0 }: Props) {
+  const { state } = useAppStore();
+  const truncateText = state.settings?.truncateTaskText !== false;
+
   const {
     attributes,
     listeners,
@@ -135,7 +139,8 @@ export function TodoCard({ todo, onToggle, onDelete, onOpen, isDragOverlay = fal
         className="flex-1 flex items-center gap-1.5 min-w-0 text-left disabled:cursor-default"
       >
         <span className={cn(
-          'flex-1 text-sm leading-snug truncate font-medium',
+          'flex-1 text-sm leading-snug font-medium',
+          truncateText && 'truncate',
           todo.completed ? 'line-through text-white/25' : 'text-white',
           todo.priority && PRIORITY_LABEL[todo.priority] && !todo.completed && 'opacity-90',
         )}>

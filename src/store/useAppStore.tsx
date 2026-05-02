@@ -2,7 +2,7 @@ import { createContext, useContext, useReducer, useEffect, useState, useRef } fr
 import type { ReactNode } from 'react';
 import { Preferences } from '@capacitor/preferences';
 import { arrayMove } from '@dnd-kit/sortable';
-import type { AppState, Workspace, Group, Todo, GroupSettings, SubTask } from '@/types/index';
+import type { AppState, Workspace, Group, Todo, GroupSettings, SubTask, AppSettings } from '@/types/index';
 
 const STORAGE_KEY = 'app_state';
 
@@ -32,7 +32,8 @@ export type AppAction =
   | { type: 'ADD_SUBTASK'; payload: { workspaceId: string; groupId: string; todoId: string; text: string } }
   | { type: 'TOGGLE_SUBTASK'; payload: { workspaceId: string; groupId: string; todoId: string; subtaskId: string } }
   | { type: 'DELETE_SUBTASK'; payload: { workspaceId: string; groupId: string; todoId: string; subtaskId: string } }
-  | { type: 'UPDATE_SUBTASK_TEXT'; payload: { workspaceId: string; groupId: string; todoId: string; subtaskId: string; text: string } };
+  | { type: 'UPDATE_SUBTASK_TEXT'; payload: { workspaceId: string; groupId: string; todoId: string; subtaskId: string; text: string } }
+  | { type: 'UPDATE_APP_SETTINGS'; payload: Partial<AppSettings> };
 
 function updateWorkspace(state: AppState, workspaceId: string, fn: (ws: Workspace) => Workspace): AppState {
   return {
@@ -51,7 +52,10 @@ function updateGroup(workspace: Workspace, groupId: string, fn: (g: Group) => Gr
 function reducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
     case 'LOAD_STATE':
-      return action.payload;
+      return {
+        ...action.payload,
+        settings: { truncateTaskText: true, ...(action.payload.settings ?? {}) },
+      };
 
     case 'ADD_WORKSPACE': {
       const newWs: Workspace = {
@@ -298,6 +302,12 @@ function reducer(state: AppState, action: AppAction): AppState {
           ),
         }))
       );
+
+    case 'UPDATE_APP_SETTINGS':
+      return {
+        ...state,
+        settings: { truncateTaskText: true, ...(state.settings ?? {}), ...action.payload },
+      };
 
     default:
       return state;

@@ -27,6 +27,7 @@ interface Props {
   onOpenTask: (groupId: string, todoId: string) => void;
   onOpenPomodoro: () => void;
   onOpenSearch: () => void;
+  onOpenSettings: () => void;
 }
 
 export function MobileLayout({
@@ -46,6 +47,7 @@ export function MobileLayout({
   onOpenTask,
   onOpenPomodoro,
   onOpenSearch,
+  onOpenSettings,
 }: Props) {
   const [sheetOpen, setSheetOpen] = useState(false);
   const addInputRef = useRef<HTMLInputElement>(null);
@@ -80,6 +82,13 @@ export function MobileLayout({
           <ChevronDown size={15} className="text-white/40 shrink-0" />
         </button>
 
+        <button
+          onClick={onOpenSettings}
+          className="btn-spring-icon flex items-center justify-center w-10 h-10 bg-white/8 text-white/60 hover:text-white hover:bg-white/15 shrink-0"
+          aria-label="App settings"
+        >
+          <Settings size={17} />
+        </button>
         <button
           onClick={onOpenSearch}
           className="btn-spring-icon flex items-center justify-center w-10 h-10 bg-white/8 text-white/60 hover:text-white hover:bg-white/15 shrink-0"

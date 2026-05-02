@@ -89,12 +89,12 @@ export function GroupColumn({ group, allGroups, onAddTodo, onToggleTodo, onDelet
       </div>
 
       {/* Todo list */}
-      <ScrollArea className="flex-1 min-h-0 px-2">
+      <ScrollArea className="flex-1 min-h-0 pl-2 pr-1">
         <SortableContext items={group.todos.map(t => t.id)} strategy={verticalListSortingStrategy}>
           <div
             ref={setNodeRef}
             className={cn(
-              'flex flex-col gap-1.5 min-h-16 pb-2 transition-all rounded-2xl',
+              'flex flex-col gap-1.5 min-h-16 pb-2 pr-3 transition-all rounded-2xl',
               isOver && 'bg-primary/6 ring-1 ring-primary/20',
             )}
           >

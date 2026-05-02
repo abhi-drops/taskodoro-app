@@ -34,7 +34,8 @@ The reducer handles all mutations via typed `AppAction` dispatches. State is per
 **Key types** (`src/types/index.ts`):
 - `Todo` — has a serial number field `sn: number` (display order), plus optional `description`, `priority` (`low|medium|high|urgent`), `color`, `tags`, `comments` (`TaskComment[]`), `endTime` (timestamp), `subtasks` (`SubTask[]`)
 - `GroupSettings` — `onCompleteMoveTo?: string|null`, `sortBy?: TodoSortKey`, `filterBy?: TodoFilterKey`
-- `AppState` — `workspaces[]`, `activeWorkspaceId: string|null`
+- `AppSettings` — `truncateTaskText: boolean`
+- `AppState` — `workspaces[]`, `activeWorkspaceId: string|null`, `settings?: AppSettings`
 
 **Pomodoro types** (`src/types/pomodoro.ts`):
 - `PomodoroBlock` — `id`, `type: 'work'|'break'`, `label`, `durationMins`, `taskId?`, `groupId?`, `completed`
@@ -76,6 +77,7 @@ Drag-and-drop uses `@dnd-kit`. On mobile, dragging a card over a group tab navig
 - **Group settings**: `onCompleteMoveTo` — when a todo is checked, it auto-moves to a configured target group.
 - **Group sort/filter**: `sortBy` and `filterBy` fields on `GroupSettings` (persisted). Applied view-side via `applyGroupView()` in `src/lib/todoView.ts`, consumed via `useMemo` in `ActiveGroupView` (mobile) and `GroupColumn` (desktop). DnD reorder is suppressed when a sort is active. UI: chip-selector rows in `GroupSettingsSheet`.
   - `filterBy: 'lastGroup'` — special filter that shows only todos whose `lastGroupId` matches `GroupSettings.filterByLastGroup`. Set via the "Filter by last group" dropdown in `GroupSettingsSheet`. `lastGroupId` is stamped on a todo whenever it is moved between groups (via `MOVE_TODO`) or auto-moved on completion (via `TOGGLE_TODO`'s `onCompleteMoveTo` branch).
+- **Global settings**: `AppSettings` interface in `src/types/index.ts`; stored as `AppState.settings` and persisted automatically. Managed via `UPDATE_APP_SETTINGS` action. UI: `GlobalSettingsSheet` (`src/components/GlobalSettingsSheet.tsx`) — bottom sheet opened from the Settings (gear) icon button in both `MobileLayout` and `BoardHeader` headers (placed before the search button). Current settings: `truncateTaskText: boolean` (default `true`) — controls whether todo card text is clipped to one line.
 
 ### UI / Styling
 

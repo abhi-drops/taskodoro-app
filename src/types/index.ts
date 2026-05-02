@@ -54,7 +54,12 @@ export interface Workspace {
   createdAt: number;
 }
 
+export interface AppSettings {
+  truncateTaskText: boolean;
+}
+
 export interface AppState {
   workspaces: Workspace[];
   activeWorkspaceId: string | null;
+  settings?: AppSettings;
 }

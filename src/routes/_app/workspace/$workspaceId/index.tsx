@@ -108,6 +108,7 @@ function WorkspaceIndex() {
           onOpenTask={() => {}}
           onOpenPomodoro={() => {}}
           onOpenSearch={() => {}}
+          onOpenSettings={() => {}}
         />
       ) : (
         <div className="flex h-screen overflow-hidden" style={{ background: 'oklch(0.07 0.005 30)' }}>
@@ -127,6 +128,7 @@ function WorkspaceIndex() {
               onToggleSidebar={() => setSidebarOpen(true)}
               onOpenPomodoro={() => {}}
               onOpenSearch={() => {}}
+              onOpenSettings={() => {}}
             />
             <Board
               workspace={workspace}

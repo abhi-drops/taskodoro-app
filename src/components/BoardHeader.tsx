@@ -1,4 +1,4 @@
-import { PanelLeft, Plus, Timer, Search } from 'lucide-react';
+import { PanelLeft, Plus, Timer, Search, Settings } from 'lucide-react';
 
 interface Props {
   workspaceName: string;
@@ -6,9 +6,10 @@ interface Props {
   onToggleSidebar: () => void;
   onOpenPomodoro: () => void;
   onOpenSearch: () => void;
+  onOpenSettings: () => void;
 }
 
-export function BoardHeader({ workspaceName, onNewGroup, onToggleSidebar, onOpenPomodoro, onOpenSearch }: Props) {
+export function BoardHeader({ workspaceName, onNewGroup, onToggleSidebar, onOpenPomodoro, onOpenSearch, onOpenSettings }: Props) {
   return (
     <header
       className="flex items-center gap-3 px-4 h-14 shrink-0 border-b border-white/8"
@@ -25,6 +26,13 @@ export function BoardHeader({ workspaceName, onNewGroup, onToggleSidebar, onOpen
       <h1 className="flex-1 font-bold text-base text-white truncate">{workspaceName}</h1>
 
       <div className="flex items-center gap-1.5">
+        <button
+          onClick={onOpenSettings}
+          aria-label="App settings"
+          className="btn-spring-icon flex items-center justify-center w-10 h-10 bg-white/8 text-white/50 hover:text-white hover:bg-white/15"
+        >
+          <Settings size={17} />
+        </button>
         <button
           onClick={onOpenSearch}
           aria-label="Search tasks"

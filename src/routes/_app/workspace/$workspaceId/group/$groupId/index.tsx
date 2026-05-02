@@ -27,6 +27,7 @@ import { CreateNameDialog } from '@/components/dialogs/CreateNameDialog'
 import { PomodoroPlanner } from '@/components/pomodoro/PomodoroPlanner'
 import { PomodoroTimer } from '@/components/pomodoro/PomodoroTimer'
 import { SearchPanel } from '@/components/SearchPanel'
+import { GlobalSettingsSheet } from '@/components/GlobalSettingsSheet'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import type { Todo } from '@/types/index'
 import type { PomodoroBlock } from '@/types/pomodoro'
@@ -49,6 +50,7 @@ function GroupRoute() {
   const [pomodoroOpen, setPomodoroOpen] = useState(false)
   const [pomodoroBlocks, setPomodoroBlocks] = useState<PomodoroBlock[] | null>(null)
   const [searchOpen, setSearchOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   const activeWorkspace = state.workspaces.find(w => w.id === workspaceId) ?? null
 
@@ -291,6 +293,7 @@ function GroupRoute() {
             onOpenTask={handleOpenTask}
             onOpenPomodoro={() => setPomodoroOpen(true)}
             onOpenSearch={() => setSearchOpen(true)}
+            onOpenSettings={() => setSettingsOpen(true)}
           />
         ) : (
           <div className="flex flex-col h-[100dvh]" style={{ paddingTop: 'env(safe-area-inset-top)', background: 'oklch(0.07 0.005 30)' }}>
@@ -317,6 +320,7 @@ function GroupRoute() {
                   onToggleSidebar={() => setSidebarOpen(true)}
                   onOpenPomodoro={() => setPomodoroOpen(true)}
                   onOpenSearch={() => setSearchOpen(true)}
+                  onOpenSettings={() => setSettingsOpen(true)}
                 />
                 <Board
                   workspace={activeWorkspace}
@@ -377,6 +381,10 @@ function GroupRoute() {
           onMove={handleMoveTask}
           dispatch={dispatch}
         />
+      )}
+
+      {settingsOpen && (
+        <GlobalSettingsSheet onClose={() => setSettingsOpen(false)} />
       )}
 
       {searchOpen && activeWorkspace && (
