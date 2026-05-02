@@ -321,6 +321,8 @@ function ActiveGroupView({ group, allGroups, onToggleTodo, onDeleteTodo, onDelet
                         key={todo.id}
                         todo={todo}
                         index={i}
+                        workspaceId={workspaceId}
+                        groupId={group.id}
                         onToggle={() => onToggleTodo(todo.id)}
                         onDelete={() => onDeleteTodo(todo.id)}
                         onOpen={() => onOpenTask(todo.id)}
@@ -333,6 +335,8 @@ function ActiveGroupView({ group, allGroups, onToggleTodo, onDeleteTodo, onDelet
                     key={todo.id}
                     todo={todo}
                     index={i}
+                    workspaceId={workspaceId}
+                    groupId={group.id}
                     onToggle={() => onToggleTodo(todo.id)}
                     onDelete={() => onDeleteTodo(todo.id)}
                     onOpen={() => onOpenTask(todo.id)}

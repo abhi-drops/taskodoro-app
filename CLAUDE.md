@@ -26,13 +26,13 @@ All app data lives in a single React context (`src/store/useAppStore.tsx`). Stat
 AppState
   workspaces[]
     groups[]           ← settings: { onCompleteMoveTo, sortBy, filterBy }
-      todos[]          ← subtasks[], comments[], priority, color, tags, endTime, sn
+      todos[]          ← subtasks[], comments[], priority, color, tags, endTime, sn, type?, counterValue?
 ```
 
 The reducer handles all mutations via typed `AppAction` dispatches. State is persisted to device storage via `@capacitor/preferences` with an 800ms debounce on every change. State is loaded asynchronously on mount — `isLoaded` guards rendering until ready.
 
 **Key types** (`src/types/index.ts`):
-- `Todo` — has a serial number field `sn: number` (display order), plus optional `description`, `priority` (`low|medium|high|urgent`), `color`, `tags`, `comments` (`TaskComment[]`), `endTime` (timestamp), `subtasks` (`SubTask[]`)
+- `Todo` — has a serial number field `sn: number` (display order), plus optional `description`, `priority` (`low|medium|high|urgent`), `color`, `tags`, `comments` (`TaskComment[]`), `endTime` (timestamp), `subtasks` (`SubTask[]`), `type` (`'default'|'counter'`, default is `undefined`/`'default'`), `counterValue` (number, used when `type === 'counter'`)
 - `GroupSettings` — `onCompleteMoveTo?: string|null`, `sortBy?: TodoSortKey`, `filterBy?: TodoFilterKey`
 - `AppSettings` — `truncateTaskText: boolean`
 - `AppState` — `workspaces[]`, `activeWorkspaceId: string|null`, `settings?: AppSettings`
@@ -78,6 +78,7 @@ Drag-and-drop uses `@dnd-kit`. On mobile, dragging a card over a group tab navig
 - **Group sort/filter**: `sortBy` and `filterBy` fields on `GroupSettings` (persisted). Applied view-side via `applyGroupView()` in `src/lib/todoView.ts`, consumed via `useMemo` in `ActiveGroupView` (mobile) and `GroupColumn` (desktop). DnD reorder is suppressed when a sort is active. UI: chip-selector rows in `GroupSettingsSheet`.
   - `filterBy: 'lastGroup'` — special filter that shows only todos whose `lastGroupId` matches `GroupSettings.filterByLastGroup`. Set via the "Filter by last group" dropdown in `GroupSettingsSheet`. `lastGroupId` is stamped on a todo whenever it is moved between groups (via `MOVE_TODO`) or auto-moved on completion (via `TOGGLE_TODO`'s `onCompleteMoveTo` branch).
 - **Global settings**: `AppSettings` interface in `src/types/index.ts`; stored as `AppState.settings` and persisted automatically. Managed via `UPDATE_APP_SETTINGS` action. UI: `GlobalSettingsSheet` (`src/components/GlobalSettingsSheet.tsx`) — bottom sheet opened from the Settings (gear) icon button in both `MobileLayout` and `BoardHeader` headers (placed before the search button). Current settings: `truncateTaskText: boolean` (default `true`) — controls whether todo card text is clipped to one line.
+- **Counter task type**: Todos have an optional `type?: 'default'|'counter'` field (`undefined` = default). Counter todos gain a `counterValue?: number` field. In the card (TodoCard), counter todos show `−` / value / `+` inline buttons instead of the end-time badge; tapping increments/decrements via direct `dispatch` (`UPDATE_TODO_DETAILS`) inside TodoCard — no callback threading needed. In TaskDetailsSheet, a "Type" section (pill selector) lets users switch type; switching to counter shows a numeric input for direct value editing. Decrement clamps at 0. Counter todos still support completion, priority, color, tags, etc.
 
 ### UI / Styling
 

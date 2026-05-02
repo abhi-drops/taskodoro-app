@@ -340,6 +340,8 @@ function GroupRoute() {
         {activeDragTodo && (
           <TodoCard
             todo={activeDragTodo}
+            workspaceId={workspaceId}
+            groupId={groupId}
             onToggle={() => {}}
             onDelete={() => {}}
             onOpen={() => {}}

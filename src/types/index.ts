@@ -25,8 +25,13 @@ export interface Todo {
   comments?: TaskComment[];
   endTime?: number;
   subtasks?: SubTask[];
+  type?: 'default' | 'counter';
+  counterValue?: number;
+  counterTarget?: number;
   lastGroupId?: string;
 }
+
+export type TaskType = 'default' | 'counter';
 
 export type TodoSortKey = 'none' | 'priority' | 'dueDate' | 'createdAt' | 'alpha' | 'completedLast' | 'lastGroup';
 export type TodoFilterKey = 'all' | 'incomplete' | 'completed' | 'lastGroup';

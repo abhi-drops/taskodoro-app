@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Clock, Tag, MessageSquare, AlignLeft, Flag, Palette, ArrowRightLeft, Trash2, Send, CheckCircle2, Circle, Plus, ListTodo, Pencil } from 'lucide-react';
+import { X, Clock, Tag, MessageSquare, AlignLeft, Flag, Palette, ArrowRightLeft, Trash2, Send, CheckCircle2, Circle, Plus, ListTodo, Pencil, Hash } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useCountdown } from '@/hooks/useCountdown';
 import { MarkdownEditor } from '@/components/MarkdownEditor';
-import type { Todo, Group, TaskPriority } from '@/types/index';
+import type { Todo, Group, TaskPriority, TaskType } from '@/types/index';
 import type { AppAction } from '@/store/useAppStore';
 
 type Dispatch = React.Dispatch<AppAction>;
@@ -93,7 +93,7 @@ export function TaskDetailsSheet({
     return () => document.removeEventListener('keydown', handler);
   }, [onClose]);
 
-  function patch(p: Partial<Pick<Todo, 'description' | 'priority' | 'color' | 'tags' | 'endTime' | 'text' | 'subtasks'>>) {
+  function patch(p: Partial<Pick<Todo, 'description' | 'priority' | 'color' | 'tags' | 'endTime' | 'text' | 'subtasks' | 'type' | 'counterValue' | 'counterTarget'>>) {
     dispatch({ type: 'UPDATE_TODO_DETAILS', payload: { workspaceId, groupId: currentGroupId, todoId: todo.id, patch: p } });
   }
 
@@ -201,19 +201,21 @@ export function TaskDetailsSheet({
           />
         </div>
         <div className="flex items-center gap-1 shrink-0 mt-0.5">
-          <button
-            onClick={handleToggleComplete}
-            className={cn(
-              'flex items-center gap-1.5 h-9 px-3 rounded-2xl text-sm font-semibold transition-all active:scale-95',
-              todo.completed
-                ? 'bg-primary/20 text-primary border border-primary/30'
-                : 'bg-white/8 text-white/50 hover:bg-white/15 border border-white/10',
-            )}
-            aria-label={todo.completed ? 'Mark incomplete' : 'Mark complete'}
-          >
-            {todo.completed ? <CheckCircle2 size={16} className="shrink-0" /> : <Circle size={16} className="shrink-0" />}
-            <span className="hidden sm:inline">{todo.completed ? 'Done' : 'Mark done'}</span>
-          </button>
+          {todo.type !== 'counter' && (
+            <button
+              onClick={handleToggleComplete}
+              className={cn(
+                'flex items-center gap-1.5 h-9 px-3 rounded-2xl text-sm font-semibold transition-all active:scale-95',
+                todo.completed
+                  ? 'bg-primary/20 text-primary border border-primary/30'
+                  : 'bg-white/8 text-white/50 hover:bg-white/15 border border-white/10',
+              )}
+              aria-label={todo.completed ? 'Mark incomplete' : 'Mark complete'}
+            >
+              {todo.completed ? <CheckCircle2 size={16} className="shrink-0" /> : <Circle size={16} className="shrink-0" />}
+              <span className="hidden sm:inline">{todo.completed ? 'Done' : 'Mark done'}</span>
+            </button>
+          )}
           <button
             onClick={onClose}
             className="flex items-center justify-center w-9 h-9 rounded-2xl text-white/40 hover:bg-white/10 hover:text-white transition-colors"
@@ -246,6 +248,90 @@ export function TaskDetailsSheet({
                 </button>
               ))}
             </div>
+          </Section>
+
+          {/* Task Type */}
+          <Section icon={<Hash size={13} />} label="Type">
+            <div className="flex gap-2">
+              {(['default', 'counter'] as TaskType[]).map(t => {
+                const isActive = (todo.type ?? 'default') === t;
+                return (
+                  <button
+                    key={t}
+                    onClick={() => {
+                      if (isActive) return;
+                      patch(t === 'counter'
+                        ? { type: 'counter', counterValue: todo.counterValue ?? 0 }
+                        : { type: 'default' }
+                      );
+                    }}
+                    aria-pressed={isActive}
+                    className={cn('btn-spring-pill px-3.5 py-1.5 text-sm font-semibold',
+                      isActive
+                        ? 'bg-primary/20 text-primary ring-1 ring-primary/40'
+                        : 'bg-white/8 text-white/40 hover:bg-white/15 hover:text-white border border-white/8',
+                    )}
+                  >
+                    {t === 'default' ? 'Default' : 'Counter'}
+                  </button>
+                );
+              })}
+            </div>
+            {todo.type === 'counter' && (
+              <div className="mt-3 flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-white/40 font-medium">Value</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={todo.counterValue ?? 0}
+                    onChange={e => {
+                      const n = parseInt(e.target.value, 10);
+                      if (isNaN(n)) { patch({ counterValue: 0 }); return; }
+                      const clamped = todo.counterTarget != null
+                        ? Math.min(Math.max(0, n), todo.counterTarget)
+                        : Math.max(0, n);
+                      patch({ counterValue: clamped });
+                    }}
+                    style={{ colorScheme: 'dark' }}
+                    className="w-20 h-11 rounded-2xl border border-white/10 bg-white/6 px-3 text-sm font-mono font-bold text-white text-center focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    aria-label="Counter value"
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-white/40 font-medium">Out of</span>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min={1}
+                      value={todo.counterTarget ?? ''}
+                      placeholder="—"
+                      onChange={e => {
+                        const raw = e.target.value;
+                        if (raw === '') {
+                          patch({ counterTarget: undefined });
+                          return;
+                        }
+                        const n = parseInt(raw, 10);
+                        if (!isNaN(n) && n >= 1) patch({ counterTarget: n });
+                      }}
+                      style={{ colorScheme: 'dark' }}
+                      className="w-20 h-11 rounded-2xl border border-white/10 bg-white/6 px-3 text-sm font-mono font-bold text-white text-center focus:outline-none focus:ring-2 focus:ring-primary/40 placeholder:text-white/20 placeholder:font-normal"
+                      aria-label="Counter target"
+                    />
+                    {todo.counterTarget != null && (
+                      <button
+                        onClick={() => patch({ counterTarget: undefined })}
+                        className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-white/15 text-white/50 hover:bg-white/25 flex items-center justify-center transition-colors"
+                        aria-label="Clear target"
+                      >
+                        <X size={9} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </Section>
 
           {/* Subtasks */}

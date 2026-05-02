@@ -25,7 +25,7 @@ export type AppAction =
   | { type: 'DELETE_TODO'; payload: { workspaceId: string; groupId: string; todoId: string } }
   | { type: 'MOVE_TODO'; payload: { workspaceId: string; todoId: string; fromGroupId: string; toGroupId: string; overIndex?: number } }
   | { type: 'REORDER_TODO'; payload: { workspaceId: string; groupId: string; activeIndex: number; overIndex: number } }
-  | { type: 'UPDATE_TODO_DETAILS'; payload: { workspaceId: string; groupId: string; todoId: string; patch: Partial<Pick<Todo, 'description' | 'priority' | 'color' | 'tags' | 'endTime' | 'text' | 'subtasks'>> } }
+  | { type: 'UPDATE_TODO_DETAILS'; payload: { workspaceId: string; groupId: string; todoId: string; patch: Partial<Pick<Todo, 'description' | 'priority' | 'color' | 'tags' | 'endTime' | 'text' | 'subtasks' | 'type' | 'counterValue' | 'counterTarget'>> } }
   | { type: 'ADD_COMMENT'; payload: { workspaceId: string; groupId: string; todoId: string; text: string } }
   | { type: 'DELETE_COMMENT'; payload: { workspaceId: string; groupId: string; todoId: string; commentId: string } }
   | { type: 'UPDATE_GROUP_SETTINGS'; payload: { workspaceId: string; groupId: string; settings: GroupSettings } }

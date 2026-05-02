@@ -122,6 +122,8 @@ export function GroupColumn({ group, allGroups, onAddTodo, onToggleTodo, onDelet
                         key={todo.id}
                         todo={todo}
                         index={i}
+                        workspaceId={workspaceId}
+                        groupId={group.id}
                         onToggle={() => onToggleTodo(todo.id)}
                         onDelete={() => onDeleteTodo(todo.id)}
                         onOpen={() => onOpenTask(todo.id)}
@@ -134,6 +136,8 @@ export function GroupColumn({ group, allGroups, onAddTodo, onToggleTodo, onDelet
                     key={todo.id}
                     todo={todo}
                     index={i}
+                    workspaceId={workspaceId}
+                    groupId={group.id}
                     onToggle={() => onToggleTodo(todo.id)}
                     onDelete={() => onDeleteTodo(todo.id)}
                     onOpen={() => onOpenTask(todo.id)}
