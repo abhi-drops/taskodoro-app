@@ -15,7 +15,9 @@ function IndexRoute() {
 
   useEffect(() => {
     if (!isLoaded) return
-    const ws = state.workspaces[0]
+    const ws =
+      state.workspaces.find(w => w.id === state.activeWorkspaceId) ??
+      state.workspaces[0]
     if (!ws) return
     const group = ws.groups[0]
     if (group) {
@@ -23,7 +25,7 @@ function IndexRoute() {
     } else {
       navigate({ to: '/workspace/$workspaceId', params: { workspaceId: ws.id }, replace: true })
     }
-  }, [isLoaded, state.workspaces, navigate])
+  }, [isLoaded, state.workspaces, state.activeWorkspaceId, navigate])
 
   if (!isLoaded) return null
 
