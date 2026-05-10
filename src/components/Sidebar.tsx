@@ -25,7 +25,7 @@ export function Sidebar({
   isOpen,
   onClose,
   isCollapsed = false,
-  onToggleCollapse,
+  onToggleCollapse: _onToggleCollapse,
 }: Props) {
   return (
     <>
