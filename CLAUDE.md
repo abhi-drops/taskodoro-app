@@ -82,6 +82,7 @@ Drag-and-drop uses `@dnd-kit`. On mobile, dragging a card over a group tab navig
 - **Sidebar collapse**: Desktop sidebar (`src/components/Sidebar.tsx`) supports collapsing to a w-14 icon-strip via `isCollapsed` / `onToggleCollapse` props. Collapsed state persisted to `localStorage('sidebar-collapsed')`. Collapsed view shows workspace letter avatars (first char). Toggle button is at the bottom of the sidebar (desktop only, `hidden md:flex`).
 - **Keyboard shortcuts**: Defined in `src/routes/_app/workspace/$workspaceId/group/$groupId/index.tsx`. `Ctrl/Cmd+K` = Search, `Ctrl/Cmd+P` = Pomodoro, `Ctrl/Cmd+,` = Settings, `Escape` = close any open overlay. Suppressed when focus is inside an input/textarea/contenteditable.
 - **Desktop modals**: `DesktopModal` (`src/components/DesktopModal.tsx`) — reusable centered modal wrapper using `m3-center-sheet` animation, 640px default width, 85vh max-height. Used by `GlobalSettingsSheet` on desktop. `SearchPanel` and `PomodoroPlanner` apply `m3-center-sheet` directly (they have custom headers). All three panels are 640px centered on desktop; mobile layouts unchanged.
+- **Haptic feedback**: Every `<button>` press triggers a light haptic impact via a single `document.addEventListener('pointerdown', ...)` in `src/routes/__root.tsx`. Safe wrapper is in `src/lib/haptics.ts`. Silently no-ops on web. Disabled buttons excluded. New buttons covered automatically.
 
 ### UI / Styling
 
@@ -113,6 +114,7 @@ Design system is documented in `style.md`. Key rules:
 | `@capacitor/app` | Android back button + `appStateChange` for foreground re-sync |
 | `tailwindcss` v4 | CSS-first config |
 | `lucide-react` | Icons |
+| `@capacitor/haptics` | Haptic feedback on button press (Android) |
 
 ## Maintenance rule
 
