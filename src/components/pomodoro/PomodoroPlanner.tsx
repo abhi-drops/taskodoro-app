@@ -48,6 +48,9 @@ function generatePlan(tasks: SelectedTask[], workMins: number, breakMins: number
       taskId: t.todo.id,
       groupId: t.groupId,
       completed: false,
+      isCounter: t.todo.type === 'counter',
+      counterValue: t.todo.counterValue,
+      counterTarget: t.todo.counterTarget,
     });
     if (i < tasks.length - 1) {
       blocks.push({

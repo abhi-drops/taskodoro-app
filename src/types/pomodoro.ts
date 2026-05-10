@@ -6,6 +6,9 @@ export interface PomodoroBlock {
   taskId?: string;
   groupId?: string;
   completed: boolean;
+  isCounter?: boolean;
+  counterValue?: number;
+  counterTarget?: number;
 }
 
 export interface PomodoroSession {

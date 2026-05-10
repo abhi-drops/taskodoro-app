@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, RotateCcw, Pause, Play, Plus, Check, Coffee, Zap, SkipForward } from 'lucide-react';
+import { X, RotateCcw, Pause, Play, Plus, Minus, Check, Coffee, Zap, SkipForward } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
 import { cn } from '@/lib/utils';
@@ -33,6 +33,13 @@ function playAlarmLoop() {
 
 export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dispatch }: Props) {
   const [blocks, setBlocks] = useState<PomodoroBlock[]>(initialBlocks);
+  const [counterValues, setCounterValues] = useState<Record<string, number>>(() => {
+    const map: Record<string, number> = {};
+    initialBlocks.forEach(b => {
+      if (b.isCounter && b.taskId != null) map[b.taskId] = b.counterValue ?? 0;
+    });
+    return map;
+  });
   const [blockIdx, setBlockIdx] = useState(0);
   const [timeLeft, setTimeLeft] = useState((initialBlocks[0]?.durationMins ?? 0) * 60);
   const [isRunning, setIsRunning] = useState(true);
@@ -289,6 +296,18 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
     setBlocks(prev => prev.map(pb => pb.id === b.id ? { ...pb, completed: !pb.completed } : pb));
   }
 
+  function handleCounterChange(b: PomodoroBlock, delta: number) {
+    if (!b.taskId || !b.groupId) return;
+    const current = counterValues[b.taskId] ?? 0;
+    const next = Math.max(0, current + delta);
+    const capped = b.counterTarget != null ? Math.min(next, b.counterTarget) : next;
+    setCounterValues(prev => ({ ...prev, [b.taskId!]: capped }));
+    dispatch({
+      type: 'UPDATE_TODO_DETAILS',
+      payload: { workspaceId, groupId: b.groupId, todoId: b.taskId, patch: { counterValue: capped } },
+    });
+  }
+
   if (!block) return null;
 
   // Progress bar width %
@@ -494,6 +513,36 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
             </p>
           </div>
           <div className="flex flex-col gap-2.5 w-full max-w-xs">
+            {isWork && block.isCounter && (
+              <div className="flex items-center rounded-xl overflow-hidden border border-white/8 bg-white/4">
+                <button
+                  onClick={() => handleCounterChange(block, -1)}
+                  aria-label="Decrement counter"
+                  className="btn-spring-icon flex items-center justify-center w-11 h-10 text-white/35 hover:text-white hover:bg-white/8 transition-colors shrink-0"
+                >
+                  <Minus size={15} strokeWidth={2.5} />
+                </button>
+                <div className="w-px h-5 bg-white/10 shrink-0" />
+                <div className="flex-1 flex items-center justify-center gap-1 py-2.5">
+                  <span className="font-mono font-black text-xl text-white tabular-nums leading-none tracking-tighter">
+                    {counterValues[block.taskId!] ?? 0}
+                  </span>
+                  {block.counterTarget != null && (
+                    <span className="font-mono font-bold text-sm text-white/35 tabular-nums leading-none">
+                      /{block.counterTarget}
+                    </span>
+                  )}
+                </div>
+                <div className="w-px h-5 bg-white/10 shrink-0" />
+                <button
+                  onClick={() => handleCounterChange(block, 1)}
+                  aria-label="Increment counter"
+                  className="btn-spring-icon flex items-center justify-center w-11 h-10 bg-primary/18 text-primary hover:bg-primary/28 transition-colors shrink-0"
+                >
+                  <Plus size={15} strokeWidth={2.5} />
+                </button>
+              </div>
+            )}
             <button
               onClick={handleAddFive}
               className="btn-spring h-12 bg-white/10 text-white font-medium flex items-center justify-center gap-2 hover:bg-white/20"
@@ -548,6 +597,56 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
               .filter(b => b.type === 'work')
               .map((b) => {
                 const isActive = b.id === block.id;
+                if (b.isCounter) {
+                  return (
+                    <div
+                      key={b.id}
+                      className={cn(
+                        'flex flex-col gap-1.5 w-full px-3 py-2 rounded-xl text-sm',
+                        isActive ? 'bg-white/10' : '',
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className={cn('flex-1 truncate font-medium text-white', b.completed && 'line-through text-white/30')}>
+                          {b.label}
+                        </span>
+                        {isActive && (
+                          <span className="text-xs bg-primary text-white px-1.5 py-0.5 rounded-full font-bold shrink-0">
+                            Now
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center rounded-xl overflow-hidden border border-white/8 bg-white/4">
+                        <button
+                          onClick={e => { e.stopPropagation(); handleCounterChange(b, -1); }}
+                          aria-label="Decrement counter"
+                          className="btn-spring-icon flex items-center justify-center w-10 h-9 text-white/35 hover:text-white hover:bg-white/8 transition-colors shrink-0"
+                        >
+                          <Minus size={13} strokeWidth={2.5} />
+                        </button>
+                        <div className="w-px h-4 bg-white/10 shrink-0" />
+                        <div className="flex-1 flex items-center justify-center gap-1 py-2">
+                          <span className="font-mono font-black text-lg text-white tabular-nums leading-none tracking-tighter">
+                            {counterValues[b.taskId!] ?? 0}
+                          </span>
+                          {b.counterTarget != null && (
+                            <span className="font-mono font-bold text-xs text-white/35 tabular-nums leading-none">
+                              /{b.counterTarget}
+                            </span>
+                          )}
+                        </div>
+                        <div className="w-px h-4 bg-white/10 shrink-0" />
+                        <button
+                          onClick={e => { e.stopPropagation(); handleCounterChange(b, 1); }}
+                          aria-label="Increment counter"
+                          className="btn-spring-icon flex items-center justify-center w-10 h-9 bg-primary/18 text-primary hover:bg-primary/28 transition-colors shrink-0"
+                        >
+                          <Plus size={13} strokeWidth={2.5} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }
                 return (
                   <button
                     key={b.id}
