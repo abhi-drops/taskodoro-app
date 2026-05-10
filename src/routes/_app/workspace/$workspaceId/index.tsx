@@ -6,6 +6,7 @@ import { Sidebar } from '@/components/Sidebar'
 import { BoardHeader } from '@/components/BoardHeader'
 import { Board } from '@/components/Board'
 import { CreateNameDialog } from '@/components/dialogs/CreateNameDialog'
+import { ConfirmDeleteDialog } from '@/components/dialogs/ConfirmDeleteDialog'
 import { useIsMobile } from '@/hooks/useIsMobile'
 import {
   DndContext,
@@ -31,6 +32,15 @@ function WorkspaceIndex() {
   const [newWorkspaceOpen, setNewWorkspaceOpen] = useState(false)
   const [newGroupOpen, setNewGroupOpen] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  type PendingDelete = { kind: 'workspace'; id: string; name: string }
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null)
+
+  function handleConfirmDelete() {
+    if (!pendingDelete) return
+    dispatch({ type: 'DELETE_WORKSPACE', payload: { id: pendingDelete.id } })
+    setPendingDelete(null)
+  }
 
   const workspace = state.workspaces.find(w => w.id === workspaceId)
   if (workspace) foundRef.current = true
@@ -98,7 +108,10 @@ function WorkspaceIndex() {
           activeGroupId={null}
           onSetActiveGroup={() => {}}
           onSelectWorkspace={handleSelectWorkspace}
-          onDeleteWorkspace={id => dispatch({ type: 'DELETE_WORKSPACE', payload: { id } })}
+          onDeleteWorkspace={id => {
+              const ws = state.workspaces.find(w => w.id === id)
+              if (ws) setPendingDelete({ kind: 'workspace', id, name: ws.name })
+            }}
           onNewWorkspace={() => setNewWorkspaceOpen(true)}
           onNewGroup={() => setNewGroupOpen(true)}
           onAddTodo={() => {}}
@@ -116,7 +129,10 @@ function WorkspaceIndex() {
             workspaces={state.workspaces}
             activeWorkspaceId={workspaceId}
             onSelectWorkspace={handleSelectWorkspace}
-            onDeleteWorkspace={id => dispatch({ type: 'DELETE_WORKSPACE', payload: { id } })}
+            onDeleteWorkspace={id => {
+              const ws = state.workspaces.find(w => w.id === id)
+              if (ws) setPendingDelete({ kind: 'workspace', id, name: ws.name })
+            }}
             onNewWorkspace={() => setNewWorkspaceOpen(true)}
             isOpen={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
@@ -162,6 +178,13 @@ function WorkspaceIndex() {
         }}
         title="New Group"
         placeholder="Group name…"
+      />
+      <ConfirmDeleteDialog
+        open={pendingDelete !== null}
+        onOpenChange={open => { if (!open) setPendingDelete(null) }}
+        onConfirm={handleConfirmDelete}
+        title="Delete workspace?"
+        description={`"${pendingDelete?.name}" and all its groups and todos will be permanently removed.`}
       />
     </DndContext>
   )

@@ -24,6 +24,7 @@ import { MobileLayout } from '@/components/mobile/MobileLayout'
 import { TodoCard } from '@/components/TodoCard'
 import { TaskDetailsSheet } from '@/components/TaskDetailsSheet'
 import { CreateNameDialog } from '@/components/dialogs/CreateNameDialog'
+import { ConfirmDeleteDialog } from '@/components/dialogs/ConfirmDeleteDialog'
 import { PomodoroPlanner } from '@/components/pomodoro/PomodoroPlanner'
 import { PomodoroTimer } from '@/components/pomodoro/PomodoroTimer'
 import { SearchPanel } from '@/components/SearchPanel'
@@ -51,6 +52,12 @@ function GroupRoute() {
   const [pomodoroBlocks, setPomodoroBlocks] = useState<PomodoroBlock[] | null>(null)
   const [searchOpen, setSearchOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+
+  type PendingDelete =
+    | { kind: 'workspace'; id: string; name: string }
+    | { kind: 'group'; id: string; name: string }
+    | { kind: 'todo'; groupId: string; todoId: string; text: string }
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null)
 
   const activeWorkspace = state.workspaces.find(w => w.id === workspaceId) ?? null
 
@@ -217,12 +224,26 @@ function GroupRoute() {
   }, [dispatch, workspaceId])
 
   const handleDeleteTodo = useCallback((gId: string, todoId: string) => {
-    dispatch({ type: 'DELETE_TODO', payload: { workspaceId, groupId: gId, todoId } })
-  }, [dispatch, workspaceId])
+    const todo = activeWorkspace?.groups.find(g => g.id === gId)?.todos.find(t => t.id === todoId)
+    if (todo) setPendingDelete({ kind: 'todo', groupId: gId, todoId, text: todo.text })
+  }, [activeWorkspace])
 
   const handleDeleteGroup = useCallback((gId: string) => {
-    dispatch({ type: 'DELETE_GROUP', payload: { workspaceId, groupId: gId } })
-  }, [dispatch, workspaceId])
+    const group = activeWorkspace?.groups.find(g => g.id === gId)
+    if (group) setPendingDelete({ kind: 'group', id: gId, name: group.name })
+  }, [activeWorkspace])
+
+  function handleConfirmDelete() {
+    if (!pendingDelete) return
+    if (pendingDelete.kind === 'workspace') {
+      dispatch({ type: 'DELETE_WORKSPACE', payload: { id: pendingDelete.id } })
+    } else if (pendingDelete.kind === 'group') {
+      dispatch({ type: 'DELETE_GROUP', payload: { workspaceId, groupId: pendingDelete.id } })
+    } else {
+      dispatch({ type: 'DELETE_TODO', payload: { workspaceId, groupId: pendingDelete.groupId, todoId: pendingDelete.todoId } })
+    }
+    setPendingDelete(null)
+  }
 
   const handleOpenTask = useCallback((gId: string, todoId: string) => {
     setOpenTaskDetail({ todoId, groupId: gId })
@@ -283,7 +304,10 @@ function GroupRoute() {
             activeGroupId={groupId}
             onSetActiveGroup={handleSetActiveGroup}
             onSelectWorkspace={handleSelectWorkspace}
-            onDeleteWorkspace={id => dispatch({ type: 'DELETE_WORKSPACE', payload: { id } })}
+            onDeleteWorkspace={id => {
+              const ws = state.workspaces.find(w => w.id === id)
+              if (ws) setPendingDelete({ kind: 'workspace', id, name: ws.name })
+            }}
             onNewWorkspace={() => setNewWorkspaceOpen(true)}
             onNewGroup={() => setNewGroupOpen(true)}
             onAddTodo={handleAddTodo}
@@ -306,7 +330,10 @@ function GroupRoute() {
             workspaces={state.workspaces}
             activeWorkspaceId={workspaceId}
             onSelectWorkspace={handleSelectWorkspace}
-            onDeleteWorkspace={id => dispatch({ type: 'DELETE_WORKSPACE', payload: { id } })}
+            onDeleteWorkspace={id => {
+              const ws = state.workspaces.find(w => w.id === id)
+              if (ws) setPendingDelete({ kind: 'workspace', id, name: ws.name })
+            }}
             onNewWorkspace={() => setNewWorkspaceOpen(true)}
             isOpen={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
@@ -370,6 +397,23 @@ function GroupRoute() {
         }}
         title="New Group"
         placeholder="Group name…"
+      />
+      <ConfirmDeleteDialog
+        open={pendingDelete !== null}
+        onOpenChange={open => { if (!open) setPendingDelete(null) }}
+        onConfirm={handleConfirmDelete}
+        title={
+          pendingDelete?.kind === 'workspace' ? 'Delete workspace?' :
+          pendingDelete?.kind === 'group' ? 'Delete group?' :
+          'Delete todo?'
+        }
+        description={
+          pendingDelete?.kind === 'workspace'
+            ? `"${pendingDelete.name}" and all its groups and todos will be permanently removed.`
+            : pendingDelete?.kind === 'group'
+            ? `"${pendingDelete.name}" and all its todos will be permanently removed.`
+            : `"${pendingDelete?.text}" will be permanently removed.`
+        }
       />
 
       {openTodo && activeWorkspace && openTaskDetail && (
