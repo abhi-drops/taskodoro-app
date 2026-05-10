@@ -247,6 +247,7 @@ export function PomodoroTimer({ blocks: initialBlocks, workspaceId, onClose, dis
     if (blockIdx + 1 < blocks.length) {
       goToBlock(blockIdx + 1);
     } else {
+      stopAlarm();
       if (isAndroid && nativeActiveRef.current) {
         PomodoroNative.stop().catch(() => {});
         nativeActiveRef.current = false;
