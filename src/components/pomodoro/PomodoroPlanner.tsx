@@ -518,7 +518,7 @@ export function PomodoroPlanner({ workspace, onClose, onStart }: Props) {
           'fixed z-50 flex flex-col',
           isMobile
             ? 'inset-x-0 bottom-0 rounded-t-3xl max-h-[92dvh] m3-sheet'
-            : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-3xl w-[480px] max-h-[85vh] shadow-2xl m3-dialog',
+            : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-3xl w-[640px] max-h-[85vh] shadow-2xl m3-center-sheet',
         )}
         style={{ background: 'oklch(0.1 0.008 30)', border: '1px solid rgba(255,255,255,0.08)' }}
       >

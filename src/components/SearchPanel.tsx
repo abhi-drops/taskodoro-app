@@ -178,25 +178,8 @@ export function SearchPanel({ workspace, onOpenTask, onClose, isMobile }: Props)
     { value: 'no_date', label: 'No date' },
   ];
 
-  const panelContent = (
-    <div
-      role="dialog"
-      aria-modal="true"
-      aria-label="Search tasks"
-      className={cn(
-        'flex flex-col z-50',
-        isMobile
-          ? 'm3-sheet fixed inset-x-0 bottom-0 rounded-t-3xl shadow-2xl border-t border-white/10'
-          : 'm3-sidebar fixed inset-y-0 right-0 w-[440px] border-l border-white/10 shadow-2xl',
-      )}
-      style={{
-        background: 'oklch(0.1 0.008 30)',
-        ...(isMobile
-          ? { maxHeight: '92dvh', paddingBottom: 'env(safe-area-inset-bottom)' }
-          : { paddingTop: 'env(safe-area-inset-top)' }),
-      }}
-      onClick={e => e.stopPropagation()}
-    >
+  const innerContent = (
+    <>
       {/* Mobile drag handle */}
       {isMobile && (
         <div className="flex justify-center pt-3 pb-1 shrink-0">
@@ -435,8 +418,31 @@ export function SearchPanel({ workspace, onOpenTask, onClose, isMobile }: Props)
           </div>
         )}
       </div>
-    </div>
+    </>
   );
+
+  if (!isMobile) {
+    return (
+      <>
+        <div
+          className="fixed inset-0 z-40 m3-fade-in"
+          style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(10px)' }}
+          onClick={onClose}
+          aria-hidden="true"
+        />
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Search tasks"
+          className="fixed z-50 flex flex-col top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-3xl shadow-2xl border border-white/8 m3-center-sheet w-[640px] max-h-[85vh]"
+          style={{ background: 'oklch(0.1 0.008 30)' }}
+          onClick={e => e.stopPropagation()}
+        >
+          {innerContent}
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -446,7 +452,20 @@ export function SearchPanel({ workspace, onOpenTask, onClose, isMobile }: Props)
         onClick={onClose}
         aria-hidden="true"
       />
-      {panelContent}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Search tasks"
+        className="m3-sheet fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-3xl shadow-2xl border-t border-white/10"
+        style={{
+          background: 'oklch(0.1 0.008 30)',
+          maxHeight: '92dvh',
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        }}
+        onClick={e => e.stopPropagation()}
+      >
+        {innerContent}
+      </div>
     </>
   );
 }

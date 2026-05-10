@@ -52,6 +52,17 @@ function GroupRoute() {
   const [pomodoroBlocks, setPomodoroBlocks] = useState<PomodoroBlock[] | null>(null)
   const [searchOpen, setSearchOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
+    try { return localStorage.getItem('sidebar-collapsed') === 'true' } catch { return false }
+  })
+
+  function handleToggleSidebarCollapse() {
+    setSidebarCollapsed(prev => {
+      const next = !prev
+      try { localStorage.setItem('sidebar-collapsed', String(next)) } catch {}
+      return next
+    })
+  }
 
   type PendingDelete =
     | { kind: 'workspace'; id: string; name: string }
@@ -100,6 +111,25 @@ function GroupRoute() {
       navigate({ to: '/workspace/$workspaceId', params: { workspaceId }, replace: true })
     }
   }, [activeWorkspace, groupId, workspaceId, navigate])
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      const target = e.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
+      const isMod = e.ctrlKey || e.metaKey
+      if (isMod && e.key === 'k') { e.preventDefault(); setSearchOpen(p => !p); return }
+      if (isMod && e.key === 'p') { e.preventDefault(); setPomodoroOpen(p => !p); return }
+      if (isMod && e.key === ',') { e.preventDefault(); setSettingsOpen(p => !p); return }
+      if (e.key === 'Escape') {
+        setSettingsOpen(p => p ? false : p)
+        setPomodoroOpen(p => p ? false : p)
+        setSearchOpen(p => p ? false : p)
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [])
 
   const openTodo = openTaskDetail
     ? (activeWorkspace?.groups
@@ -337,6 +367,8 @@ function GroupRoute() {
             onNewWorkspace={() => setNewWorkspaceOpen(true)}
             isOpen={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
+            isCollapsed={sidebarCollapsed}
+            onToggleCollapse={handleToggleSidebarCollapse}
           />
           <div className="flex flex-col flex-1 overflow-hidden">
             {activeWorkspace ? (
@@ -348,6 +380,8 @@ function GroupRoute() {
                   onOpenPomodoro={() => setPomodoroOpen(true)}
                   onOpenSearch={() => setSearchOpen(true)}
                   onOpenSettings={() => setSettingsOpen(true)}
+                  isCollapsed={sidebarCollapsed}
+                  onToggleCollapse={handleToggleSidebarCollapse}
                 />
                 <Board
                   workspace={activeWorkspace}
@@ -430,7 +464,7 @@ function GroupRoute() {
       )}
 
       {settingsOpen && (
-        <GlobalSettingsSheet onClose={() => setSettingsOpen(false)} />
+        <GlobalSettingsSheet onClose={() => setSettingsOpen(false)} isMobile={isMobile} />
       )}
 
       {searchOpen && activeWorkspace && (

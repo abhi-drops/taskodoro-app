@@ -223,6 +223,18 @@
   }
 }
 
+/* Centered modal with slide-up-from-below entry */
+@keyframes m3-center-sheet-enter {
+  from {
+    transform: translateY(40px) scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
 /* Dialog / centered modal enter — scale + fade, fast spatial */
 @keyframes m3-dialog-enter {
   from {
@@ -348,6 +360,11 @@
 /* Centered dialogs */
 @utility m3-dialog {
   animation: m3-dialog-enter 350ms cubic-bezier(0.42, 1.67, 0.21, 0.90) both;
+}
+
+/* Centered modal with sheet-like slide-up from below */
+@utility m3-center-sheet {
+  animation: m3-center-sheet-enter 500ms cubic-bezier(0.38, 1.21, 0.22, 1.00) both;
 }
 
 /* List items — apply with stagger via [style="--delay:Nms"] */

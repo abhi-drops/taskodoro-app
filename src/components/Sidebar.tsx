@@ -12,6 +12,8 @@ interface Props {
   onNewWorkspace: () => void;
   isOpen: boolean;
   onClose: () => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 export function Sidebar({
@@ -22,6 +24,8 @@ export function Sidebar({
   onNewWorkspace,
   isOpen,
   onClose,
+  isCollapsed = false,
+  onToggleCollapse,
 }: Props) {
   return (
     <>
@@ -37,17 +41,26 @@ export function Sidebar({
 
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex flex-col w-60 border-r border-white/8',
-          'transition-transform duration-200',
+          'fixed inset-y-0 left-0 z-40 flex flex-col border-r border-white/8',
+          'transition-[width] duration-300 ease-[cubic-bezier(0.27,1.06,0.18,1.00)]',
           'md:relative md:translate-x-0 md:z-auto',
           isOpen ? 'translate-x-0' : '-translate-x-full',
+          isCollapsed ? 'w-14' : 'w-60',
         )}
         style={{ background: 'oklch(0.09 0.008 30)' }}
       >
         {/* Header */}
-        <div className="flex items-center gap-2.5 px-4 h-14 shrink-0 border-b border-white/8">
+        <div className={cn(
+          'flex items-center h-14 shrink-0 border-b border-white/8',
+          isCollapsed ? 'justify-center px-2' : 'gap-2.5 px-4',
+        )}>
           <img src={appIcon} alt="Taskodoro" className="w-7 h-7 shrink-0" />
-          <span className="font-bold text-sm text-white flex-1 tracking-tight">Taskodoro</span>
+          {!isCollapsed && (
+            <span className="font-bold text-sm text-white flex-1 tracking-tight overflow-hidden whitespace-nowrap">
+              Taskodoro
+            </span>
+          )}
+          {/* Mobile: close overlay */}
           <button
             className="btn-spring-icon h-7 w-7 md:hidden flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10"
             onClick={onClose}
@@ -58,8 +71,11 @@ export function Sidebar({
         </div>
 
         {/* Workspace list */}
-        <div className="flex-1 overflow-y-auto px-2 py-2 space-y-0.5">
-          {workspaces.length === 0 && (
+        <div className={cn(
+          'flex-1 overflow-y-auto py-2 space-y-0.5',
+          isCollapsed ? 'px-1' : 'px-2',
+        )}>
+          {workspaces.length === 0 && !isCollapsed && (
             <p className="text-xs text-white/25 text-center py-8">No workspaces yet</p>
           )}
           {workspaces.map((ws, idx) => (
@@ -70,19 +86,30 @@ export function Sidebar({
               onSelect={() => { onSelectWorkspace(ws.id); onClose(); }}
               onDelete={() => onDeleteWorkspace(ws.id)}
               index={idx}
+              isCollapsed={isCollapsed}
             />
           ))}
         </div>
 
         {/* New workspace */}
         <div className="p-2 border-t border-white/8">
-          <button
-            onClick={onNewWorkspace}
-            className="btn-spring w-full flex items-center gap-2 px-3 py-2.5 text-sm font-semibold text-white/40 hover:text-white bg-white/5 hover:bg-white/10 border border-white/8"
-          >
-            <Plus size={14} />
-            New Workspace
-          </button>
+          {isCollapsed ? (
+            <button
+              onClick={onNewWorkspace}
+              className="btn-spring-icon w-10 h-10 flex items-center justify-center mx-auto text-white/40 hover:text-white bg-white/5 hover:bg-white/10 border border-white/8"
+              aria-label="New Workspace"
+            >
+              <Plus size={14} />
+            </button>
+          ) : (
+            <button
+              onClick={onNewWorkspace}
+              className="btn-spring w-full flex items-center gap-2 px-3 py-2.5 text-sm font-semibold text-white/40 hover:text-white bg-white/5 hover:bg-white/10 border border-white/8"
+            >
+              <Plus size={14} />
+              New Workspace
+            </button>
+          )}
         </div>
       </aside>
     </>
@@ -95,9 +122,10 @@ interface WorkspaceItemProps {
   onSelect: () => void;
   onDelete: () => void;
   index?: number;
+  isCollapsed?: boolean;
 }
 
-function WorkspaceItem({ workspace, isActive, onSelect, onDelete, index = 0 }: WorkspaceItemProps) {
+function WorkspaceItem({ workspace, isActive, onSelect, onDelete, index = 0, isCollapsed = false }: WorkspaceItemProps) {
   const { totalTodos, completedTodos } = workspace.groups.reduce(
     (acc, g) => ({
       totalTodos: acc.totalTodos + g.todos.length,
@@ -106,6 +134,34 @@ function WorkspaceItem({ workspace, isActive, onSelect, onDelete, index = 0 }: W
     { totalTodos: 0, completedTodos: 0 },
   );
   const pct = totalTodos > 0 ? (completedTodos / totalTodos) * 100 : 0;
+
+  if (isCollapsed) {
+    return (
+      <div
+        style={{ '--delay': `${index * 40}ms` } as React.CSSProperties}
+        className={cn(
+          'm3-list-item flex items-center justify-center rounded-xl cursor-pointer transition-all w-10 h-10 mx-auto',
+          isActive
+            ? 'bg-primary/12 border border-primary/25'
+            : 'border border-transparent hover:bg-white/6 hover:border-white/8',
+        )}
+        onClick={onSelect}
+        role="button"
+        tabIndex={0}
+        onKeyDown={e => e.key === 'Enter' && onSelect()}
+        title={workspace.name}
+      >
+        <div
+          className={cn(
+            'w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold',
+            isActive ? 'bg-primary text-white' : 'bg-white/20 text-white/60',
+          )}
+        >
+          {workspace.name.charAt(0).toUpperCase()}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

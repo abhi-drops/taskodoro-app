@@ -1,4 +1,4 @@
-import { PanelLeft, Plus, Timer, Search, Settings } from 'lucide-react';
+import { PanelLeft, PanelLeftClose, Plus, Timer, Search, Settings } from 'lucide-react';
 
 interface Props {
   workspaceName: string;
@@ -7,14 +7,17 @@ interface Props {
   onOpenPomodoro: () => void;
   onOpenSearch: () => void;
   onOpenSettings: () => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
-export function BoardHeader({ workspaceName, onNewGroup, onToggleSidebar, onOpenPomodoro, onOpenSearch, onOpenSettings }: Props) {
+export function BoardHeader({ workspaceName, onNewGroup, onToggleSidebar, onOpenPomodoro, onOpenSearch, onOpenSettings, isCollapsed, onToggleCollapse }: Props) {
   return (
     <header
       className="flex items-center gap-3 px-4 h-14 shrink-0 border-b border-white/8"
       style={{ background: 'oklch(0.09 0.008 30)' }}
     >
+      {/* Mobile: open sidebar overlay */}
       <button
         className="btn-spring-icon md:hidden flex items-center justify-center w-10 h-10 bg-white/8 text-white/50 hover:text-white hover:bg-white/15"
         onClick={onToggleSidebar}
@@ -22,6 +25,17 @@ export function BoardHeader({ workspaceName, onNewGroup, onToggleSidebar, onOpen
       >
         <PanelLeft size={17} />
       </button>
+
+      {/* Desktop: collapse / expand sidebar */}
+      {onToggleCollapse && (
+        <button
+          className="btn-spring-icon hidden md:flex items-center justify-center w-10 h-10 bg-white/8 text-white/50 hover:text-white hover:bg-white/15"
+          onClick={onToggleCollapse}
+          aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        >
+          {isCollapsed ? <PanelLeft size={17} /> : <PanelLeftClose size={17} />}
+        </button>
+      )}
 
       <h1 className="flex-1 font-bold text-base text-white truncate">{workspaceName}</h1>
 
